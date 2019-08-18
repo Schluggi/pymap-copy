@@ -33,10 +33,7 @@ parser.add_argument('--destination-no-subscribe', help='do not', action="store_t
 args = parser.parse_args()
 
 denied_flags = [b'\\recent']
-
-if args.denied_flags:
-    denied_flags.extend(['\\{}'.format(flag).encode() for flag in args.denied_flags.lower().split(',')])
-
+login_error = False
 stats = {
     'start_time': time(),
     'counter_mails': 0,
@@ -55,6 +52,9 @@ stats = {
     'copied_folders': 0
 }
 
+if args.denied_flags:
+    denied_flags.extend(['\\{}'.format(flag).encode() for flag in args.denied_flags.lower().split(',')])
+
 source = IMAPClient(host=args.source_server, port=args.source_port, ssl=not args.source_no_ssl)
 destination = IMAPClient(host=args.destination_server, port=args.destination_port, ssl=not args.destination_no_ssl)
 
@@ -63,16 +63,21 @@ try:
     print('Login source ({})...'.format(args.source_user), end='', flush=False)
     source.login(args.source_user, args.source_pass)
     print('OK')
+except exceptions.LoginError as e:
+    login_error = True
+    print('ERROR: {}'.format(e))
 
+try:
     #: Login destination
     print('Login destination ({})...'.format(args.destination_user), end='', flush=False)
     destination.login(args.destination_user, args.destination_pass)
     print('OK')
 except exceptions.LoginError as e:
-    if 'AUTHENTICATIONFAILED' in str(e):
-        print('ERROR: Authentication failed')
-    else:
-        print('ERROR: {}'.format(e))
+    login_error = True
+    print('ERROR: {}'.format(e))
+
+if login_error:
+    print('\nAbort!')
     exit()
 
 print()
