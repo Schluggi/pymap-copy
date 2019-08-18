@@ -1,7 +1,7 @@
 # pymap-copy
 In our company we often have to copy mailboxes from one to another server. For this we used 
 [IMAPCopy](http://www.ardiehl.de/imapcopy/) as so far. Due to compatibility issues, first of all the missing 
-SSL/TLS support i wrote my own python-based version. I hope you enjoy it!
+SSL/TLS support i wrote my own python-based version. I hope you like it!
 
 ## Features
 - Copies folders and subfolders
@@ -9,6 +9,7 @@ SSL/TLS support i wrote my own python-based version. I hope you enjoy it!
 - Connecting via SSL/TLS (by default)
 - Supports incremental copy (copies only new mails/folders)
 - Auto subscribe new folders (by default)  
+- Quota checking
 - Uses buffer for max performance
 - Statistics
 - Simple usage
@@ -39,8 +40,5 @@ You could change the buffer size with `-b`/`--buffer-size` to increase the downl
 If you know the source mailbox has a lot of small mails use a higher size. In the case of lager mails use a lower size 
 to counter timeouts. For bad internet connections you also should use a lower sized buffer.
 
-## TODO
-- [ ] Quota warning if source is bigger than the destination
-
 ## Credits 
-Created and maintained by Schluggi
+Created and maintained by Schluggi.

@@ -10,6 +10,7 @@ parser.add_argument('-b', '--buffer-size', help='the number of mails loaded with
 parser.add_argument('-d', '--dry-run', help='copy/creating nothing, just feign', action="store_true")
 parser.add_argument('-i', '--incremental', help='copy/creating only new folders/mails', action="store_true")
 parser.add_argument('--denied-flags', help='mails with this flags will be skipped', type=str)
+parser.add_argument('--ignore-quota', help='ignores insufficient quota', action='store_true')
 parser.add_argument('--skip-empty-folders', help='skip empty folders', action='store_true')
 
 parser.add_argument('--source-user', help='Source mailbox username', nargs='?', required=True)
@@ -85,18 +86,38 @@ print()
 #: get quota from source
 print('Getting source quota...', end='', flush=False)
 if source.has_capability('QUOTA'):
-    source_quota = source.get_quota()
-    print('OK')
+    source_quota = source.get_quota()[0]
+    print('OK ({}/{})'.format(beautysized(source_quota.usage*1000), beautysized(source_quota.limit*1000)))
 else:
-    print('ERROR (server does not support quota)')
+    source_quota = None
+    print('WARNING: server does not support quota (ignoring)')
 
 #: get quota from destination
 print('Getting destination quota...', end='', flush=False)
 if destination.has_capability('QUOTA'):
-    destination_quota = destination.get_quota()
-    print('OK')
+    destination_quota = destination.get_quota()[0]
+    print('OK ({}/{})'.format(beautysized(destination_quota.usage*1000), beautysized(destination_quota.limit*1000)))
 else:
-    print('ERROR (server does not support quota)')
+    destination_quota = None
+    print('WARNING: server does not support quota (ignoring)')
+
+print('\nChecking quota...', end='', flush=False)
+
+#: checking quota
+if source_quota and destination_quota:
+    destination_quota_free = destination_quota.limit - destination_quota.usage
+    if destination_quota_free < source_quota.usage:
+        print('ERROR: Insufficient quota: The source usage is {} KB but there only {} KB free on the destination server'
+              .format(source_quota.usage, destination_quota_free), end='', flush=False)
+        if args.ignore_quota:
+            print(' (ignoring)')
+        else:
+            print('\n\nAbort!')
+            exit()
+    else:
+        print('OK')
+else:
+    print('WARNING: Could not check quota (ignoring)')
 
 print()
 
