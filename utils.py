@@ -1,4 +1,16 @@
 from email.header import decode_header
+from ast import literal_eval
+
+
+def imaperror_decode(e):
+    s = str(e)
+
+    if s.startswith(('b"', "b'")):
+        return literal_eval(s).decode()
+    elif type(e) is bytes:
+        return e.decode()
+    else:
+        raise TypeError('Can\'t handle type "{}"'.format(type(s)))
 
 
 def beautysized(b, factor=1000, precision=1):

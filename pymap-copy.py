@@ -2,7 +2,7 @@
 from argparse import ArgumentParser
 from time import time
 from imapclient import IMAPClient, exceptions
-from utils import decode_mime, beautysized
+from utils import decode_mime, beautysized, imaperror_decode
 
 parser = ArgumentParser(description='', epilog='pymap-copy by Schluggi')
 parser.add_argument('-b', '--buffer-size', help='the number of mails loaded with a single query (default: 50)',
@@ -66,7 +66,7 @@ try:
     print('OK')
 except exceptions.LoginError as e:
     login_error = True
-    print('ERROR: {}'.format(e))
+    print('ERROR: {}'.format(imaperror_decode(e)))
 
 try:
     #: Login destination
@@ -75,7 +75,7 @@ try:
     print('OK')
 except exceptions.LoginError as e:
     login_error = True
-    print('ERROR: {}'.format(e))
+    print('ERROR: {}'.format(imaperror_decode(e)))
 
 if login_error:
     print('\nAbort!')
@@ -175,7 +175,7 @@ try:
                         stats['skipped_folders']['already_exists'] += 1
                         print('Skipped! (already exists)\n')
                     else:
-                        print('ERROR: {}'.format(e))
+                        print('ERROR: {}'.format(imaperror_decode(e)))
                         continue
         else:
             stats['skipped_folders']['already_exists'] += 1
@@ -226,7 +226,7 @@ try:
                             raise exceptions.IMAPClientError(status.decode())
                     except exceptions.IMAPClientError as e:
                         stats['errors'] += 1
-                        print('\n\x1b[41m\x1b[1mError:\x1b[0m {}\n'.format(e))
+                        print('\n\x1b[41m\x1b[1mError:\x1b[0m {}\n'.format(imaperror_decode(e)))
 
         if mail_buffer:
             print('\n')
@@ -244,14 +244,14 @@ try:
     source.logout()
     print('OK')
 except exceptions.IMAPClientError as e:
-    print('ERROR: {}'.format(e))
+    print('ERROR: {}'.format(imaperror_decode(e)))
 
 try:
     print('Logout Destination...', end='', flush=False)
     destination.logout()
     print('OK')
 except exceptions.IMAPClientError as e:
-    print('ERROR: {}'.format(e))
+    print('ERROR: {}'.format(imaperror_decode(e)))
 
 print('\nCopied \x1b[1m{}/{}\x1b[0m mails and \x1b[1m{}/{}\x1b[0m folders in {:.2f}s\n'.format(
     stats['copied_mails'], stats['counter_mails'], stats['copied_folders'], len(source_folders),
