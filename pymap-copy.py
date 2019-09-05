@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser
 from time import time
+from imaplib import IMAP4
 from imapclient import IMAPClient, exceptions
 from utils import decode_mime, beautysized, imaperror_decode
 
@@ -56,24 +57,29 @@ stats = {
 if args.denied_flags:
     denied_flags.extend(['\\{}'.format(flag).encode() for flag in args.denied_flags.lower().split(',')])
 
+print('Connecting source ({})...'.format(args.source_server))
 source = IMAPClient(host=args.source_server, port=args.source_port, ssl=not args.source_no_ssl)
+
+print('Connecting destination ({})...'.format(args.destination_server))
 destination = IMAPClient(host=args.destination_server, port=args.destination_port, ssl=not args.destination_no_ssl)
+
+print()
 
 try:
     #: Login source
-    print('Login source ({})...'.format(args.source_user), end='', flush=False)
+    print('Login source ({})...'.format(args.source_user), end='', flush=True)
     source.login(args.source_user, args.source_pass)
     print('OK')
-except exceptions.LoginError as e:
+except (exceptions.LoginError, IMAP4.error) as e:
     login_error = True
     print('ERROR: {}'.format(imaperror_decode(e)))
 
 try:
     #: Login destination
-    print('Login destination ({})...'.format(args.destination_user), end='', flush=False)
+    print('Login destination ({})...'.format(args.destination_user), end='', flush=True)
     destination.login(args.destination_user, args.destination_pass)
     print('OK')
-except exceptions.LoginError as e:
+except (exceptions.LoginError, IMAP4.error) as e:
     login_error = True
     print('ERROR: {}'.format(imaperror_decode(e)))
 
@@ -84,7 +90,7 @@ if login_error:
 print()
 
 #: get quota from source
-print('Getting source quota...', end='', flush=False)
+print('Getting source quota...', end='', flush=True)
 if source.has_capability('QUOTA'):
     source_quota = source.get_quota()[0]
     print('OK ({}/{})'.format(beautysized(source_quota.usage*1000), beautysized(source_quota.limit*1000)))
@@ -93,7 +99,7 @@ else:
     print('WARNING: server does not support quota (ignoring)')
 
 #: get quota from destination
-print('Getting destination quota...', end='', flush=False)
+print('Getting destination quota...', end='', flush=True)
 if destination.has_capability('QUOTA'):
     destination_quota = destination.get_quota()[0]
     print('OK ({}/{})'.format(beautysized(destination_quota.usage*1000), beautysized(destination_quota.limit*1000)))
@@ -101,14 +107,14 @@ else:
     destination_quota = None
     print('WARNING: server does not support quota (ignoring)')
 
-print('\nChecking quota...', end='', flush=False)
+print('\nChecking quota...', end='', flush=True)
 
 #: checking quota
 if source_quota and destination_quota:
     destination_quota_free = destination_quota.limit - destination_quota.usage
     if destination_quota_free < source_quota.usage:
         print('ERROR: Insufficient quota: The source usage is {} KB but there only {} KB free on the destination server'
-              .format(source_quota.usage, destination_quota_free), end='', flush=False)
+              .format(source_quota.usage, destination_quota_free), end='', flush=True)
         if args.ignore_quota:
             print(' (ignoring)')
         else:
@@ -122,12 +128,12 @@ else:
 print()
 
 #: get source folders
-print('Getting source folders...', end='', flush=False)
+print('Getting source folders...', end='', flush=True)
 source_folders = source.list_folders()
 print('OK ({} folders found)'.format(len(source_folders)))
 
 #: get destination folders
-print('Getting destination folders...', end='', flush=False)
+print('Getting destination folders...', end='', flush=True)
 destination_folders = destination.list_folders()
 print('OK ({} folders found)'.format(len(destination_folders)))
 
@@ -153,7 +159,7 @@ try:
 
         #: creating non-existing folders
         if f_name not in [name for _, _, name in destination_folders]:
-            print('Creating...', end='', flush=False)
+            print('Creating...', end='', flush=True)
 
             if args.dry_run:
                 print('Skipped! (dry-run)')
@@ -240,14 +246,14 @@ else:
     print('Finish!\n')
 
 try:
-    print('Logout source...', end='', flush=False)
+    print('Logout source...', end='', flush=True)
     source.logout()
     print('OK')
 except exceptions.IMAPClientError as e:
     print('ERROR: {}'.format(imaperror_decode(e)))
 
 try:
-    print('Logout Destination...', end='', flush=False)
+    print('Logout Destination...', end='', flush=True)
     destination.logout()
     print('OK')
 except exceptions.IMAPClientError as e:
