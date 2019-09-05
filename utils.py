@@ -10,7 +10,7 @@ def imaperror_decode(e):
     elif type(e) is bytes:
         return e.decode()
     else:
-        raise TypeError('Can\'t handle type "{}"'.format(type(s)))
+        return s
 
 
 def beautysized(b, factor=1000, precision=1):
