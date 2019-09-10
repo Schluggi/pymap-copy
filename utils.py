@@ -20,7 +20,7 @@ def beautysized(b, factor=1000, precision=1):
     template = '{:.?f} {}'.replace('?', str(precision))
     rv = 0
 
-    if factor > b > 0:
+    if factor > b >= 0:
         rv = '{} {}'.format(b, units[0])
     elif b < factor**2:
         rv = template.format(b/factor, units[1])
