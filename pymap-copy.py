@@ -30,7 +30,8 @@ parser.add_argument('--destination-no-ssl', help='Use this option if the destina
                     action="store_true", default=False)
 parser.add_argument('--destination-port', help='The IMAP port of the destination server (default: 993)', nargs='?',
                     default=993, type=int)
-parser.add_argument('--destination-no-subscribe', help='do not', action="store_true", default=False)
+parser.add_argument('--destination-no-subscribe', help='All copied folders will be not are not subscribed',
+                    action="store_true", default=False)
 
 args = parser.parse_args()
 
