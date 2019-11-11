@@ -33,7 +33,7 @@ By running the following command the whole structure (folders & mails) from user
 --destination-server=server2.example.info \
 --destination-pass=abcdef
 ```
-If you just want to look what would happen append `-d`/`--dry-run`. 
+If you just want to look what would happen append `-d`/`--dry-run`. You can also use `-t`/`--testing` to test the login only.
 
 ### Performance optimization
 You could change the buffer size with `-b`/`--buffer-size` to increase the download speed from the source. 
