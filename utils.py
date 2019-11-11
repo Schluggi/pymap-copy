@@ -53,5 +53,4 @@ def decode_mime(s):
     except UnicodeDecodeError:
         words.append(str(s))
 
-    rv = ''.join(''.join(words).splitlines())
-    return rv
+    return ''.join(''.join(words).splitlines()).strip()
