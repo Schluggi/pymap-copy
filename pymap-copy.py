@@ -196,7 +196,8 @@ try:
         for buffer_counter, buffer in enumerate(mail_buffer):
             print('\r\x1b[2KProgressing... (loading buffer {}/{})'.format(buffer_counter+1, len(mail_buffer)), end='')
 
-            for i, fetch in enumerate(source.fetch(buffer, ['ENVELOPE', 'FLAGS', 'RFC822.SIZE', 'RFC822']).items()):
+            for i, fetch in enumerate(source.fetch(buffer, ['ENVELOPE', 'FLAGS', 'RFC822.SIZE', 'RFC822',
+                                                            'INTERNALDATE']).items()):
                 mail_id, data = fetch
                 if data[b'ENVELOPE'].subject:
                     subject = decode_mime(data[b'ENVELOPE'].subject)
@@ -206,13 +207,14 @@ try:
                 msg = data[b'RFC822']
                 msg_id = data[b'ENVELOPE'].message_id
                 size = data[b'RFC822.SIZE']
+                date = data[b'INTERNALDATE']
 
                 #: copy mail
-                print('\r\x1b[2KProgressing... (buffer {}/{}) (mail {}/{}) ({}): {}'.format(buffer_counter+1,
-                                                                                            len(mail_buffer),
-                                                                                            i+1, len(buffer),
-                                                                                            beautysized(size),
-                                                                                            subject), end='')
+                print('\r\x1b[2KProgressing... (buffer {}/{}) (mail {}/{}) ({}) ({}): {}'.format(buffer_counter+1,
+                                                                                                 len(mail_buffer),
+                                                                                                 i+1, len(buffer),
+                                                                                                 beautysized(size),
+                                                                                                 date, subject), end='')
                 if size is 0:
                     stats['skipped_mails']['zero_size'] += 1
                     print('\nSkipped! (zero sized)', end='')
@@ -226,7 +228,7 @@ try:
                 else:
                     try:
                         status = destination.append(f_name, msg, (flag for flag in flags if flag.lower() not in
-                                                                  denied_flags))
+                                                                  denied_flags), msg_time=date)
                         if b'append completed' in status.lower():
                             stats['copied_mails'] += 1
                         else:
