@@ -40,7 +40,7 @@ login_error = False
 stats = {
     'start_time': time(),
     'counter_mails': 0,
-    'errors': 0,
+    'errors': [],
     'skipped_folders': {
         'already_exists': 0,
         'empty': 0,
@@ -238,8 +238,13 @@ try:
                         else:
                             raise exceptions.IMAPClientError(status.decode())
                     except exceptions.IMAPClientError as e:
-                        stats['errors'] += 1
-                        print('\n\x1b[41m\x1b[1mError:\x1b[0m {}\n'.format(imaperror_decode(e)))
+                        e = imaperror_decode(e)
+                        stats['errors'].append({'size': beautysized(size),
+                                                'subject': subject,
+                                                'exception': e,
+                                                'folder': df_name,
+                                                'date': date})
+                        print('\n\x1b[41m\x1b[1mError:\x1b[0m {}\n'.format(e))
 
         if mail_buffer:
             print('\n')
@@ -273,12 +278,19 @@ print('\nCopied \x1b[1m{}/{}\x1b[0m mails and \x1b[1m{}/{}\x1b[0m folders in {:.
 if args.dry_run:
     print('Everything skipped! (dry-run)')
 else:
-    print('Errors            : {}'.format(stats['errors']))
+    print('Errors            : {} (see below)'.format(len(stats['errors'])))
     print('Skipped folders   : {}'.format(stats['skipped_folders']['empty'] + stats['skipped_folders']['already_exists']))
     print('├─ Empty          : {} (skip-empty-folders mode only)'.format(stats['skipped_folders']['empty']))
     print('└─ Already exists : {} '.format(stats['skipped_folders']['already_exists']))
     print('Skipped mails     : {}'.format(stats['skipped_mails']['zero_size'] + stats['skipped_mails']['already_exists']))
     print('├─ Zero sized     : {}'.format(stats['skipped_mails']['zero_size']))
     print('└─ Already exists : {} (incremental mode only)'.format(stats['skipped_mails']['already_exists']))
+    print('\nErrors:')
 
+    if stats['errors']:
+        for err in stats['errors']:
+            print('({}) ({}) ({}) ({}): {}'.format(err['size'], err['date'], err['folder'], err['subject'],
+                                                   err['exception']))
+    else:
+        print('(no errors)')
 
