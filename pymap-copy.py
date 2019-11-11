@@ -147,7 +147,7 @@ destination_folder_list = [name for _, _, name in destination_folders]
 print('OK ({} folders found)'.format(len(destination_folders)))
 
 if args.testing:
-    print('\n\x1b[1mSource:\x1b[0m')
+    print('\n\x1b[1mSource\x1b[0m ({})'.format(source_delimiter))
     source_sum, destination_sum = 0, 0
 
     for folder in source_folder_list:
@@ -156,7 +156,7 @@ if args.testing:
         source_sum += mail_counter
         print('{}: {} mails'.format(folder, mail_counter))
     print('-----\n{} mails'.format(source_sum))
-    print('\n\x1b[1mDestination:\x1b[0m')
+    print('\n\x1b[1mDestination\x1b[0m ({})'.format(destination_delimiter))
 
     for folder in destination_folder_list:
         destination.select_folder(folder, readonly=True)
