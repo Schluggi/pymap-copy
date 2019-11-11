@@ -131,21 +131,25 @@ print()
 #: get source folders
 print('Getting source folders...', end='', flush=True)
 source_folders = source.list_folders()
+source_delimiter = source_folders[0][1].decode()
 print('OK ({} folders found)'.format(len(source_folders)))
 
 #: get destination folders
 print('Getting destination folders...', end='', flush=True)
 destination_folders = destination.list_folders()
+destination_delimiter = destination_folders[0][1].decode()
+destination_folder_list = [name for _, _, name in destination_folders]
 print('OK ({} folders found)'.format(len(destination_folders)))
 
 print('\nStarting mail transfer\n')
 
 try:
     for folder in source_folders:
-        f_flags, f_delimiter, f_name = folder
+        _, _, sf_name = folder
+        df_name = sf_name.replace(source_delimiter, destination_delimiter)
 
         #: get list of all mails in the current folder
-        source.select_folder(f_name, readonly=True)
+        source.select_folder(sf_name, readonly=True)
         source_mail_ids = source.search()
         mail_counter = len(source_mail_ids)
         stats['counter_mails'] += mail_counter
@@ -156,10 +160,10 @@ try:
             mail_buffer.append(source_mail_ids[:args.buffer_size])
             del source_mail_ids[:args.buffer_size]
 
-        print('Current folder: {} ({} mails)'.format(f_name, mail_counter))
+        print('Current folder: {} -> {} ({} mails)'.format(sf_name, df_name, mail_counter))
 
         #: creating non-existing folders
-        if f_name not in [name for _, _, name in destination_folders]:
+        if df_name not in destination_folder_list:
             print('Creating...', end='', flush=True)
 
             if args.dry_run:
@@ -172,9 +176,9 @@ try:
 
             else:
                 try:
-                    destination.create_folder(f_name)
+                    destination.create_folder(df_name)
                     if args.destination_no_subscribe is False:
-                        destination.subscribe_folder(f_name)
+                        destination.subscribe_folder(df_name)
                     stats['copied_folders'] += 1
                     print('OK')
                 except exceptions.IMAPClientError as e:
@@ -188,7 +192,7 @@ try:
             stats['skipped_folders']['already_exists'] += 1
 
         if args.incremental:
-            destination.select_folder(f_name, readonly=True)
+            destination.select_folder(df_name, readonly=True)
             destination_mail_ids = destination.search()
             destination_msg_ids = [data[b'ENVELOPE'].message_id for mail_id, data in destination.fetch(
                 destination_mail_ids, ['ENVELOPE']).items()]
@@ -227,8 +231,8 @@ try:
 
                 else:
                     try:
-                        status = destination.append(f_name, msg, (flag for flag in flags if flag.lower() not in
-                                                                  denied_flags), msg_time=date)
+                        status = destination.append(df_name, msg, (flag for flag in flags if flag.lower() not in
+                                                                   denied_flags), msg_time=date)
                         if b'append completed' in status.lower():
                             stats['copied_mails'] += 1
                         else:
