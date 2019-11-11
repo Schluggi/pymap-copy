@@ -97,7 +97,7 @@ if source.has_capability('QUOTA'):
     print('OK ({}/{})'.format(beautysized(source_quota.usage*1000), beautysized(source_quota.limit*1000)))
 else:
     source_quota = None
-    print('WARNING: server does not support quota (ignoring)')
+    print('server does not support quota (ignoring)')
 
 #: get quota from destination
 print('Getting destination quota...', end='', flush=True)
@@ -106,7 +106,7 @@ if destination.has_capability('QUOTA'):
     print('OK ({}/{})'.format(beautysized(destination_quota.usage*1000), beautysized(destination_quota.limit*1000)))
 else:
     destination_quota = None
-    print('WARNING: server does not support quota (ignoring)')
+    print('server does not support quota (ignoring)')
 
 print('\nChecking quota...', end='', flush=True)
 
@@ -124,7 +124,7 @@ if source_quota and destination_quota:
     else:
         print('OK')
 else:
-    print('WARNING: Could not check quota (ignoring)')
+    print('could not check quota (ignoring)')
 
 print()
 
