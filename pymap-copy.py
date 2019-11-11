@@ -226,7 +226,7 @@ try:
                     try:
                         status = destination.append(f_name, msg, (flag for flag in flags if flag.lower() not in
                                                                   denied_flags))
-                        if b'Append completed' in status:
+                        if b'append completed' in status.lower():
                             stats['copied_mails'] += 1
                         else:
                             raise exceptions.IMAPClientError(status.decode())
