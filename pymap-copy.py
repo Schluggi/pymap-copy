@@ -134,14 +134,14 @@ print()
 
 #: get source folders
 print('Getting source folders...', end='', flush=True)
-source_folders = source.list_folders()
+source_folders = sorted(source.list_folders(), key=lambda x: x[2].lower())
 source_delimiter = source_folders[0][1].decode()
 source_folder_list = [name for _, _, name in source_folders]
 print('OK ({} folders found)'.format(len(source_folders)))
 
 #: get destination folders
 print('Getting destination folders...', end='', flush=True)
-destination_folders = destination.list_folders()
+destination_folders = sorted(destination.list_folders(), key=lambda x: x[2].lower())
 destination_delimiter = destination_folders[0][1].decode()
 destination_folder_list = [name for _, _, name in destination_folders]
 print('OK ({} folders found)'.format(len(destination_folders)))
