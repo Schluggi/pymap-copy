@@ -13,6 +13,8 @@ parser.add_argument('-t', '--testing', help='do nothing apart from login and lis
 parser.add_argument('-i', '--incremental', help='copy/creating only new folders/mails', action="store_true")
 parser.add_argument('--denied-flags', help='mails with this flags will be skipped', type=str)
 parser.add_argument('--ignore-quota', help='ignores insufficient quota', action='store_true')
+parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like drafts, '
+                                                  'trash, etc.)', action='store_true')
 parser.add_argument('--skip-empty-folders', help='skip empty folders', action='store_true')
 
 parser.add_argument('--source-user', help='Source mailbox username', nargs='?', required=True)
@@ -36,6 +38,7 @@ parser.add_argument('--destination-no-subscribe', help='All copied folders will 
 
 args = parser.parse_args()
 
+SPECIAL_FOLDER_FLAGS = [b'\\Archive', b'\\Junk', b'\\Drafts', b'\\Trash', b'\\Sent']
 denied_flags = [b'\\recent']
 login_error = False
 stats = {
@@ -167,8 +170,17 @@ print('\nStarting mail transfer\n')
 
 try:
     for folder in source_folders:
-        _, _, sf_name = folder
+        sf_flags, _, sf_name = folder
         df_name = sf_name.replace(source_delimiter, destination_delimiter)
+
+        #: link special IMAP folder
+        if not args.ignore_folder_flags:
+            for sf_flag in sf_flags:
+                if sf_flag in SPECIAL_FOLDER_FLAGS:
+                    for df_flags, _, name in destination_folders:
+                        if sf_flag in df_flags:
+                            df_name = name
+                            break
 
         #: get list of all mails in the current folder
         source.select_folder(sf_name, readonly=True)
