@@ -9,6 +9,7 @@ parser = ArgumentParser(description='', epilog='pymap-copy by Schluggi')
 parser.add_argument('-b', '--buffer-size', help='the number of mails loaded with a single query (default: 50)',
                     nargs='?', type=int, default=50)
 parser.add_argument('-d', '--dry-run', help='copy/creating nothing, just feign', action="store_true")
+parser.add_argument('-t', '--testing', help='do nothing apart from login and listing folders', action="store_true")
 parser.add_argument('-i', '--incremental', help='copy/creating only new folders/mails', action="store_true")
 parser.add_argument('--denied-flags', help='mails with this flags will be skipped', type=str)
 parser.add_argument('--ignore-quota', help='ignores insufficient quota', action='store_true')
@@ -132,6 +133,7 @@ print()
 print('Getting source folders...', end='', flush=True)
 source_folders = source.list_folders()
 source_delimiter = source_folders[0][1].decode()
+source_folder_list = [name for _, _, name in source_folders]
 print('OK ({} folders found)'.format(len(source_folders)))
 
 #: get destination folders
@@ -140,6 +142,26 @@ destination_folders = destination.list_folders()
 destination_delimiter = destination_folders[0][1].decode()
 destination_folder_list = [name for _, _, name in destination_folders]
 print('OK ({} folders found)'.format(len(destination_folders)))
+
+if args.testing:
+    print('\n\x1b[1mSource:\x1b[0m')
+    source_sum, destination_sum = 0, 0
+
+    for folder in source_folder_list:
+        source.select_folder(folder, readonly=True)
+        mail_counter = len(source.search())
+        source_sum += mail_counter
+        print('{}: {} mails'.format(folder, mail_counter))
+    print('-----\n{} mails'.format(source_sum))
+    print('\n\x1b[1mDestination:\x1b[0m')
+
+    for folder in destination_folder_list:
+        destination.select_folder(folder, readonly=True)
+        mail_counter = len(destination.search())
+        destination_sum += mail_counter
+        print('{}: {} mails'.format(folder, mail_counter))
+    print('-----\n{} mails'.format(destination_sum))
+    exit()
 
 print('\nStarting mail transfer\n')
 
