@@ -277,9 +277,9 @@ try:
                                                 'subject': subject,
                                                 'exception': e,
                                                 'folder': df_name,
-                                                'date': date})
+                                                'date': date,
+                                                'id': msg_id})
                         print('\n\x1b[41m\x1b[1mError:\x1b[0m {}\n'.format(e))
-
         if mail_buffer:
             print('\n')
         else:
@@ -323,8 +323,8 @@ else:
 
     if stats['errors']:
         for err in stats['errors']:
-            print('({}) ({}) ({}) ({}): {}'.format(err['size'], err['date'], err['folder'], err['subject'],
-                                                   err['exception']))
+            print('({}) ({}) ({}) ({}) ({}): {}'.format(err['size'], err['date'], err['folder'], err['id'],
+                                                        err['subject'], err['exception']))
     else:
         print('(no errors)')
 
