@@ -21,17 +21,17 @@ parser.add_argument('--ignore-folder-flags', help='do not link default IMAP fold
 parser.add_argument('--max-line-length', help='use this option when the program crashes by some mails', type=int)
 parser.add_argument('--skip-empty-folders', help='skip empty folders', action='store_true')
 parser.add_argument('--skip-ssl-verification', help='do not verify any ssl certificate', action='store_true')
-parser.add_argument('--source-user', help='Source mailbox username', nargs='?', required=True)
-parser.add_argument('--source-pass', help='Source mailbox password', nargs='?', required=True)
-parser.add_argument('--source-server', help='Hostname/IP of the source IMAP-server', nargs='?', required=True,
+parser.add_argument('-u', '--source-user', help='Source mailbox username', nargs='?', required=True)
+parser.add_argument('-p', '--source-pass', help='Source mailbox password', nargs='?', required=True)
+parser.add_argument('-s', '--source-server', help='Hostname/IP of the source IMAP-server', nargs='?', required=True,
                     default=False)
 parser.add_argument('--source-no-ssl', help='Use this option if the destination server does not support TLS/SSL',
                     action="store_true")
 parser.add_argument('--source-port', help='The IMAP port of the source server (default: 993)', nargs='?',
                     default=993, type=int)
-parser.add_argument('--destination-user', help='Destination mailbox username', nargs='?', required=True)
-parser.add_argument('--destination-pass', help='Destination mailbox password', nargs='?', required=True)
-parser.add_argument('--destination-server', help='Hostname/IP of the destination server', nargs='?', required=True)
+parser.add_argument('-U', '--destination-user', help='Destination mailbox username', nargs='?', required=True)
+parser.add_argument('-P', '--destination-pass', help='Destination mailbox password', nargs='?', required=True)
+parser.add_argument('-S', '--destination-server', help='Hostname/IP of the destination server', nargs='?', required=True)
 parser.add_argument('--destination-no-ssl', help='Use this option if the destination server does not support TLS/SSL',
                     action="store_true", default=False)
 parser.add_argument('--destination-port', help='The IMAP port of the destination server (default: 993)', nargs='?',
