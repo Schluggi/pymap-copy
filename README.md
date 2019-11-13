@@ -8,6 +8,7 @@ SSL/TLS support i wrote my own python-based version. I hope you like it!
 - Copies mails even with flags (seen, answered, ...)
 - Connecting via SSL/TLS (by default)
 - Supports incremental copy (copies only new mails/folders)
+- User specific redirections
 - Auto subscribe new folders (by default)
 - Auto find the special IMAP folders Drafts, Trash, etc. (by default)  
 - Quota checking (by default)
@@ -37,6 +38,14 @@ By running the following command the whole structure (folders & mails) from user
 --destination-pass=abcdef
 ```
 If you just want to look what would happen append `-d`/`--dry-run`.
+
+### Redirections
+You want to merge `INBOX.Send Items` with the `INBOX.Send` folder? You can do this with `-r/--redirect`.
+The syntax of this argument is simple `source:destination`. For this example you can use `-r "INBOX.Send Items:INBOX.Send"`
+to put all mails from the source folder `INBOX.Send Items` the to destination folder `INBOX.Send`. 
+Please make sure you use quotation marks if one of the folders includes a special character or space like as in this example.
+In addition, the folder names must be case-sensitive with the correct delimiter. Do a dry run (`-d/--dry-run`) to check 
+that everything will redirect correctly. 
 
 ### Performance optimization
 You could change the buffer size with `-b`/`--buffer-size` to increase the download speed from the source. 

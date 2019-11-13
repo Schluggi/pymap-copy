@@ -15,6 +15,7 @@ parser.add_argument('-i', '--incremental', help='copy/creating only new folders/
 parser.add_argument('--abort-on-error', help='the process will interrupt at the first mail transfer error',
                     action="store_true")
 parser.add_argument('--denied-flags', help='mails with this flags will be skipped', type=str)
+parser.add_argument('-r', '--redirect', help='redirect a folder (source:destination)', action='append')
 parser.add_argument('--ignore-quota', help='ignores insufficient quota', action='store_true')
 parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like drafts, '
                                                   'trash, etc.)', action='store_true')
@@ -210,6 +211,20 @@ print('OK, {} mails in {} folders ({})\n'.format(
     stats['destination_mails'], len(db['destination']['folders']),
     beautysized(sum([f['size'] for f in db['destination']['folders'].values()]))))
 
+#: custom links
+redirections = {}
+for redirection in args.redirect:
+    try:
+        r_source, r_destination = redirection.split(':', 1)
+        if r_source not in db['source']['folders']:
+            print('\n\x1b[31m\x1b[1mError:\x1b[0m Source folder "{}" not found\n'.format(r_source))
+            exit()
+    except ValueError:
+        print('\n\x1b[31m\x1b[1mError:\x1b[0m Could not parse redirection: "{}"\n'.format(redirection))
+        exit()
+    else:
+        redirections[r_source] = r_destination
+
 try:
     for sf_name in sorted(db['source']['folders'], key=lambda x: x.lower()):
         source.select_folder(sf_name, readonly=True)
@@ -223,6 +238,10 @@ try:
                         if sf_flag in db['destination']['folders'][name]['flags']:
                             df_name = name
                             break
+
+        #: custom links
+        if sf_name in redirections:
+            df_name = redirections[sf_name]
 
         if df_name in db['destination']['folders']:
             print('Current folder: {} ({} mails, {}) -> {} ({} mails, {})'.format(
