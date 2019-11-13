@@ -213,17 +213,18 @@ print('OK, {} mails in {} folders ({})\n'.format(
 
 #: custom links
 redirections = {}
-for redirection in args.redirect:
-    try:
-        r_source, r_destination = redirection.split(':', 1)
-        if r_source not in db['source']['folders']:
-            print('\n\x1b[31m\x1b[1mError:\x1b[0m Source folder "{}" not found\n'.format(r_source))
+if args.redirect:
+    for redirection in args.redirect:
+        try:
+            r_source, r_destination = redirection.split(':', 1)
+            if r_source not in db['source']['folders']:
+                print('\n\x1b[31m\x1b[1mError:\x1b[0m Source folder "{}" not found\n'.format(r_source))
+                exit()
+        except ValueError:
+            print('\n\x1b[31m\x1b[1mError:\x1b[0m Could not parse redirection: "{}"\n'.format(redirection))
             exit()
-    except ValueError:
-        print('\n\x1b[31m\x1b[1mError:\x1b[0m Could not parse redirection: "{}"\n'.format(redirection))
-        exit()
-    else:
-        redirections[r_source] = r_destination
+        else:
+            redirections[r_source] = r_destination
 
 try:
     for sf_name in sorted(db['source']['folders'], key=lambda x: x.lower()):
