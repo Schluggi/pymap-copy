@@ -80,11 +80,11 @@ if args.skip_ssl_verification:
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
 
-print('Connecting source ({})...'.format(args.source_server))
+print('\nConnecting source           : {}'.format(args.source_server))
 source = IMAPClient(host=args.source_server, port=args.source_port, ssl=not args.source_no_ssl,
                     ssl_context=ssl_context)
 
-print('Connecting destination ({})...'.format(args.destination_server))
+print('Connecting destination      : {}'.format(args.destination_server))
 destination = IMAPClient(host=args.destination_server, port=args.destination_port, ssl=not args.destination_no_ssl,
                          ssl_context=ssl_context)
 
@@ -92,21 +92,21 @@ print()
 
 try:
     #: Login source
-    print('Login source ({})...'.format(args.source_user), end='', flush=True)
+    print('Login source                : {}, '.format(args.source_user), end='', flush=True)
     source.login(args.source_user, args.source_pass)
     print('OK')
 except (exceptions.LoginError, IMAP4.error) as e:
     login_error = True
-    print('ERROR: {}'.format(imaperror_decode(e)))
+    print('\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
 
 try:
     #: Login destination
-    print('Login destination ({})...'.format(args.destination_user), end='', flush=True)
+    print('Login destination           : {}, '.format(args.destination_user), end='', flush=True)
     destination.login(args.destination_user, args.destination_pass)
     print('OK')
 except (exceptions.LoginError, IMAP4.error) as e:
     login_error = True
-    print('ERROR: {}'.format(imaperror_decode(e)))
+    print('\n\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
 
 if login_error:
     print('\nAbort!')
@@ -115,7 +115,7 @@ if login_error:
 print()
 
 #: get quota from source
-print('Getting source quota      : ', end='', flush=True)
+print('Getting source quota        : ', end='', flush=True)
 if source.has_capability('QUOTA'):
     source_quota = source.get_quota()[0]
     print('{}/{} ({:.0f}%)'.format(beautysized(source_quota.usage*1000), beautysized(source_quota.limit*1000),
@@ -125,7 +125,7 @@ else:
     print('server does not support quota')
 
 #: get quota from destination
-print('Getting destination quota : ', end='', flush=True)
+print('Getting destination quota   : ', end='', flush=True)
 if destination.has_capability('QUOTA'):
     destination_quota = destination.get_quota()[0]
     print('{}/{} ({:.0f}%)'.format(beautysized(destination_quota.usage*1000),
@@ -136,11 +136,12 @@ else:
     print('server does not support quota')
 
 #: checking quota
-print('Checking quota            : ', end='', flush=True)
+print('Checking quota              : ', end='', flush=True)
 if source_quota and destination_quota:
     destination_quota_free = destination_quota.limit - destination_quota.usage
     if destination_quota_free < source_quota.usage:
-        print('ERROR: Insufficient quota: The source usage is {} KB but there only {} KB free on the destination server'
+        print('\x1b[31m\x1b[1mError:\x1b[0m Insufficient quota: '
+              'The source usage is {} KB but there only {} KB free on the destination server'
               .format(source_quota.usage, destination_quota_free), end='', flush=True)
         if args.ignore_quota:
             print(' (ignoring)')
@@ -155,7 +156,7 @@ else:
 print()
 
 #: get source folders
-print('Getting source folders...', end='', flush=True)
+print('Getting source folders      : ', end='', flush=True)
 for flags, delimiter, name in source.list_folders():
     db['source']['folders'][name] = {'flags': flags, 'mails': {}, 'size': 0}
 
@@ -185,11 +186,11 @@ for flags, delimiter, name in source.list_folders():
     if not source_delimiter:
         source_delimiter = delimiter.decode()
 
-print('OK, {} mails in {} folders ({})'.format(stats['source_mails'], len(db['source']['folders']),
-                                               beautysized(sum([f['size'] for f in db['source']['folders'].values()]))))
+print('{} mails in {} folders ({})'.format(stats['source_mails'], len(db['source']['folders']),
+                                           beautysized(sum([f['size'] for f in db['source']['folders'].values()]))))
 
 #: get destination folders
-print('Getting destination folders...', end='', flush=True)
+print('Getting destination folders : ', end='', flush=True)
 for flags, delimiter, name in destination.list_folders():
     db['destination']['folders'][name] = {'flags': flags, 'mails': {}, 'size': 0}
 
@@ -210,7 +211,7 @@ for flags, delimiter, name in destination.list_folders():
 
     if not destination_delimiter:
         destination_delimiter = delimiter.decode()
-print('OK, {} mails in {} folders ({})\n'.format(
+print('{} mails in {} folders ({})\n'.format(
     stats['destination_mails'], len(db['destination']['folders']),
     beautysized(sum([f['size'] for f in db['destination']['folders'].values()]))))
 
