@@ -8,9 +8,12 @@ SSL/TLS support i wrote my own python-based version. I hope you like it!
 - Copies mails even with flags (seen, answered, ...)
 - Connecting via SSL/TLS (by default)
 - Supports incremental copy (copies only new mails/folders)
-- Auto subscribe new folders (by default)  
-- Quota checking
+- Auto subscribe new folders (by default)
+- Auto find the special IMAP folders Drafts, Trash, etc. (by default)  
+- Quota checking (by default)
+- Over all progress bar
 - Uses buffer for max performance
+- Workaround for Microsoft Exchange Server's IMAP bug 
 - Statistics
 - Simple usage
     
@@ -33,12 +36,17 @@ By running the following command the whole structure (folders & mails) from user
 --destination-server=server2.example.info \
 --destination-pass=abcdef
 ```
-If you just want to look what would happen append `-d`/`--dry-run`. You can also use `-t`/`--testing` to test the login only.
+If you just want to look what would happen append `-d`/`--dry-run`.
 
 ### Performance optimization
 You could change the buffer size with `-b`/`--buffer-size` to increase the download speed from the source. 
 If you know the source mailbox has a lot of small mails use a higher size. In the case of lager mails use a lower size 
 to counter timeouts. For bad internet connections you also should use a lower sized buffer.
+
+## Microsoft Exchange Server IMAP bug 
+If your destination is an Exchange Server (EX) you'll properly get an `bad command` exception while coping some mails. 
+This happens because the EX analyse (and in some cases modify) new mails. There is a bug in this lookup process (since EX version 5 -.-) . 
+To prevent an exception you can use the argument `--max-line-length 4096`. This will skip all mails with lines more than 4096 characters.
 
 ## Credits 
 Created and maintained by Schluggi.
