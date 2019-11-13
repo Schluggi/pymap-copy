@@ -20,6 +20,7 @@ parser.add_argument('--ignore-folder-flags', help='do not link default IMAP fold
                                                   'trash, etc.)', action='store_true')
 parser.add_argument('--max-line-length', help='use this option when the program crashes by some mails', type=int)
 parser.add_argument('--skip-empty-folders', help='skip empty folders', action='store_true')
+parser.add_argument('--skip-ssl-verification', help='do not verify any ssl certificate', action='store_true')
 parser.add_argument('--source-user', help='Source mailbox username', nargs='?', required=True)
 parser.add_argument('--source-pass', help='Source mailbox password', nargs='?', required=True)
 parser.add_argument('--source-server', help='Hostname/IP of the source IMAP-server', nargs='?', required=True,
@@ -42,6 +43,7 @@ args = parser.parse_args()
 
 SPECIAL_FOLDER_FLAGS = [b'\\Archive', b'\\Junk', b'\\Drafts', b'\\Trash', b'\\Sent']
 denied_flags = [b'\\recent']
+ssl_context = None
 login_error = False
 progress = 0
 destination_delimiter, source_delimiter = None, None
@@ -71,11 +73,19 @@ stats = {
 if args.denied_flags:
     denied_flags.extend(['\\{}'.format(flag).encode() for flag in args.denied_flags.lower().split(',')])
 
+if args.skip_ssl_verification:
+    import ssl
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
 print('Connecting source ({})...'.format(args.source_server))
-source = IMAPClient(host=args.source_server, port=args.source_port, ssl=not args.source_no_ssl)
+source = IMAPClient(host=args.source_server, port=args.source_port, ssl=not args.source_no_ssl,
+                    ssl_context=ssl_context)
 
 print('Connecting destination ({})...'.format(args.destination_server))
-destination = IMAPClient(host=args.destination_server, port=args.destination_port, ssl=not args.destination_no_ssl)
+destination = IMAPClient(host=args.destination_server, port=args.destination_port, ssl=not args.destination_no_ssl,
+                         ssl_context=ssl_context)
 
 print()
 
