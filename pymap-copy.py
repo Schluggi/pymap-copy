@@ -45,7 +45,7 @@ args = parser.parse_args()
 SPECIAL_FOLDER_FLAGS = [b'\\Archive', b'\\Junk', b'\\Drafts', b'\\Trash', b'\\Sent']
 denied_flags = [b'\\recent']
 ssl_context = None
-login_error = False
+error = False
 progress = 0
 destination_delimiter, source_delimiter = None, None
 db = {'source': {'folders': {}},
@@ -80,13 +80,27 @@ if args.skip_ssl_verification:
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
 
-print('\nConnecting source           : {}'.format(args.source_server))
-source = IMAPClient(host=args.source_server, port=args.source_port, ssl=not args.source_no_ssl,
-                    ssl_context=ssl_context)
+try:
+    print('\nConnecting source           : {}, '.format(args.source_server), end='', flush=True)
+    source = IMAPClient(host=args.source_server, port=args.source_port, ssl=not args.source_no_ssl,
+                        ssl_context=ssl_context)
+    print('OK')
+except Exception as e:
+    print('\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
+    error = True
 
-print('Connecting destination      : {}'.format(args.destination_server))
-destination = IMAPClient(host=args.destination_server, port=args.destination_port, ssl=not args.destination_no_ssl,
-                         ssl_context=ssl_context)
+try:
+    print('Connecting destination      : {}, '.format(args.destination_server), end='', flush=True)
+    destination = IMAPClient(host=args.destination_server, port=args.destination_port, ssl=not args.destination_no_ssl,
+                             ssl_context=ssl_context)
+    print('OK')
+except Exception as e:
+    print('\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
+    error = True
+
+if error:
+    print('\nAbort!')
+    exit()
 
 print()
 
@@ -96,7 +110,7 @@ try:
     source.login(args.source_user, args.source_pass)
     print('OK')
 except (exceptions.LoginError, IMAP4.error) as e:
-    login_error = True
+    error = True
     print('\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
 
 try:
@@ -105,10 +119,10 @@ try:
     destination.login(args.destination_user, args.destination_pass)
     print('OK')
 except (exceptions.LoginError, IMAP4.error) as e:
-    login_error = True
+    error = True
     print('\n\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
 
-if login_error:
+if error:
     print('\nAbort!')
     exit()
 
