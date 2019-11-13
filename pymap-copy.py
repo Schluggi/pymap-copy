@@ -389,7 +389,7 @@ except exceptions.IMAPClientError as e:
     print('ERROR: {}'.format(imaperror_decode(e)))
 
 try:
-    print('Logout Destination...', end='', flush=True)
+    print('Logout destination...', end='', flush=True)
     destination.logout()
     print('OK')
 except exceptions.IMAPClientError as e:
