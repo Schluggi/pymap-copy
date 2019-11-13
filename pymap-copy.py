@@ -115,25 +115,28 @@ if login_error:
 print()
 
 #: get quota from source
-print('Getting source quota...', end='', flush=True)
+print('Getting source quota      : ', end='', flush=True)
 if source.has_capability('QUOTA'):
     source_quota = source.get_quota()[0]
-    print('OK ({}/{})'.format(beautysized(source_quota.usage*1000), beautysized(source_quota.limit*1000)))
+    print('{}/{} ({:.0f}%)'.format(beautysized(source_quota.usage*1000), beautysized(source_quota.limit*1000),
+                                   source_quota.usage / source_quota.limit * 100))
 else:
     source_quota = None
     print('server does not support quota')
 
 #: get quota from destination
-print('Getting destination quota...', end='', flush=True)
+print('Getting destination quota : ', end='', flush=True)
 if destination.has_capability('QUOTA'):
     destination_quota = destination.get_quota()[0]
-    print('OK ({}/{})'.format(beautysized(destination_quota.usage*1000), beautysized(destination_quota.limit*1000)))
+    print('{}/{} ({:.0f}%)'.format(beautysized(destination_quota.usage*1000),
+                                   beautysized(destination_quota.limit*1000),
+                                   destination_quota.usage / destination_quota.limit * 100))
 else:
     destination_quota = None
     print('server does not support quota')
 
 #: checking quota
-print('Checking quota...', end='', flush=True)
+print('Checking quota            : ', end='', flush=True)
 if source_quota and destination_quota:
     destination_quota_free = destination_quota.limit - destination_quota.usage
     if destination_quota_free < source_quota.usage:
