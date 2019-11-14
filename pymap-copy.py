@@ -179,6 +179,14 @@ for flags, delimiter, name in source.list_folders(args.source_root):
     source.select_folder(name, readonly=True)
     mails = source.search()
 
+    if not mails and args.skip_empty_folders:
+        continue
+
+    db['source']['folders'][name] = {'flags': flags,
+                                     'mails': {},
+                                     'size': 0,
+                                     'buffer': []}
+
     #: generating mail buffer
     while mails:
         db['source']['folders'][name]['buffer'].append(mails[:args.buffer_size])
