@@ -310,7 +310,7 @@ try:
                             print('\x1b[36mSkipped! (already exists)\x1b[0m\n')
                         else:
                             e = imaperror_decode(e)
-                            print('\n\x1b[31m\x1b[1mError:\x1b[0m {}\n'.format(e))
+                            print('\x1b[31m\x1b[1mError:\x1b[0m {}\n'.format(e))
                             if args.abort_on_error:
                                 raise KeyboardInterrupt
                             continue
