@@ -17,14 +17,11 @@ parser.add_argument('--abort-on-error', help='the process will interrupt at the 
 parser.add_argument('--denied-flags', help='mails with this flags will be skipped', type=str)
 parser.add_argument('-r', '--redirect', help='redirect a folder (source:destination)', action='append')
 parser.add_argument('--ignore-quota', help='ignores insufficient quota', action='store_true')
-parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like drafts, '
-                                                  'trash, etc.)', action='store_true')
+parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like Drafts, '
+                                                  'Trash, etc.)', action='store_true')
 parser.add_argument('--max-line-length', help='use this option when the program crashes by some mails', type=int)
 parser.add_argument('--skip-empty-folders', help='skip empty folders', action='store_true')
 parser.add_argument('--skip-ssl-verification', help='do not verify any ssl certificate', action='store_true')
-parser.add_argument('--source-root', help='defines the source root (case sensitive)', nargs='?', default='', type=str)
-parser.add_argument('--destination-root', help='defines the destination root (case sensitive)', nargs='?', default='',
-                    type=str)
 parser.add_argument('-u', '--source-user', help='source mailbox username', nargs='?', required=True)
 parser.add_argument('-p', '--source-pass', help='source mailbox password', nargs='?', required=True)
 parser.add_argument('-s', '--source-server', help='hostname or  of the source IMAP-server', nargs='?', required=True,
@@ -33,13 +30,17 @@ parser.add_argument('--source-no-ssl', help='use this option if the destination 
                     action="store_true")
 parser.add_argument('--source-port', help='the IMAP port of the source server (default: 993)', nargs='?',
                     default=993, type=int)
+parser.add_argument('--source-root', help='defines the source root (case sensitive)', nargs='?', default='', type=str)
 parser.add_argument('-U', '--destination-user', help='destination mailbox username', nargs='?', required=True)
 parser.add_argument('-P', '--destination-pass', help='destination mailbox password', nargs='?', required=True)
-parser.add_argument('-S', '--destination-server', help='hostname or IP of the destination server', nargs='?', required=True)
+parser.add_argument('-S', '--destination-server', help='hostname or IP of the destination server', nargs='?',
+                    required=True)
 parser.add_argument('--destination-no-ssl', help='use this option if the destination server does not support TLS/SSL',
                     action="store_true", default=False)
 parser.add_argument('--destination-port', help='the IMAP port of the destination server (default: 993)', nargs='?',
                     default=993, type=int)
+parser.add_argument('--destination-root', help='defines the destination root (case sensitive)', nargs='?', default='',
+                    type=str)
 parser.add_argument('--destination-no-subscribe', help='all copied folders will be not are not subscribed',
                     action="store_true", default=False)
 
