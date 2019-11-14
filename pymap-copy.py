@@ -172,30 +172,31 @@ print()
 #: get source folders
 print('Getting source folders      : ', end='', flush=True)
 for flags, delimiter, name in source.list_folders():
-    db['source']['folders'][name] = {'flags': flags, 'mails': {}, 'size': 0}
+    db['source']['folders'][name] = {'flags': flags,
+                                     'mails': {},
+                                     'size': 0,
+                                     'buffer': []}
 
     source.select_folder(name, readonly=True)
     mails = source.search()
 
     #: generating mail buffer
-    mail_buffer = []
-    mails2 = mails.copy()
-    while mails2:
-        mail_buffer.append(mails2[:args.buffer_size])
-        del mails2[:args.buffer_size]
-    db['source']['folders'][name]['buffer'] = mail_buffer
+    while mails:
+        db['source']['folders'][name]['buffer'].append(mails[:args.buffer_size])
 
-    for mail_id, data in source.fetch(mails, ['RFC822.SIZE', 'ENVELOPE']).items():
-        if data[b'ENVELOPE'].subject:
-            subject = decode_mime(data[b'ENVELOPE'].subject)
-        else:
-            subject = '(no subject)'
+        for mail_id, data in source.fetch(mails[:args.buffer_size], ['RFC822.SIZE', 'ENVELOPE']).items():
+            if data[b'ENVELOPE'].subject:
+                subject = decode_mime(data[b'ENVELOPE'].subject)
+            else:
+                subject = '(no subject)'
 
-        db['source']['folders'][name]['mails'][mail_id] = {'size': data[b'RFC822.SIZE'],
-                                                           'subject': subject,
-                                                           'msg_id': data[b'ENVELOPE'].message_id}
-        db['source']['folders'][name]['size'] += data[b'RFC822.SIZE']
-        stats['source_mails'] += 1
+            db['source']['folders'][name]['mails'][mail_id] = {'size': data[b'RFC822.SIZE'],
+                                                               'subject': subject,
+                                                               'msg_id': data[b'ENVELOPE'].message_id}
+            db['source']['folders'][name]['size'] += data[b'RFC822.SIZE']
+            stats['source_mails'] += 1
+
+        del mails[:args.buffer_size]
 
     if not source_delimiter:
         source_delimiter = delimiter.decode()
