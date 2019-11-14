@@ -343,7 +343,7 @@ try:
                     stats['processed'] += 1
                     print('\n\x1b[36mSkipped! (zero sized)\x1b[0m\n', end='')
 
-                elif args.incremental and \
+                elif args.incremental and df_name in db['destination']['folders'] and \
                         msg_id in [m['msg_id'] for m in db['destination']['folders'][df_name]['mails'].values()]:
                     stats['skipped_mails']['already_exists'] += 1
                     stats['processed'] += 1
