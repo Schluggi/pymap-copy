@@ -22,22 +22,25 @@ parser.add_argument('--ignore-folder-flags', help='do not link default IMAP fold
 parser.add_argument('--max-line-length', help='use this option when the program crashes by some mails', type=int)
 parser.add_argument('--skip-empty-folders', help='skip empty folders', action='store_true')
 parser.add_argument('--skip-ssl-verification', help='do not verify any ssl certificate', action='store_true')
-parser.add_argument('-u', '--source-user', help='Source mailbox username', nargs='?', required=True)
-parser.add_argument('-p', '--source-pass', help='Source mailbox password', nargs='?', required=True)
-parser.add_argument('-s', '--source-server', help='Hostname/IP of the source IMAP-server', nargs='?', required=True,
+parser.add_argument('--source-root', help='defines the source root (case sensitive)', nargs='?', default='', type=str)
+parser.add_argument('--destination-root', help='defines the destination root (case sensitive)', nargs='?', default='',
+                    type=str)
+parser.add_argument('-u', '--source-user', help='source mailbox username', nargs='?', required=True)
+parser.add_argument('-p', '--source-pass', help='source mailbox password', nargs='?', required=True)
+parser.add_argument('-s', '--source-server', help='hostname or  of the source IMAP-server', nargs='?', required=True,
                     default=False)
-parser.add_argument('--source-no-ssl', help='Use this option if the destination server does not support TLS/SSL',
+parser.add_argument('--source-no-ssl', help='use this option if the destination server does not support TLS/SSL',
                     action="store_true")
-parser.add_argument('--source-port', help='The IMAP port of the source server (default: 993)', nargs='?',
+parser.add_argument('--source-port', help='the IMAP port of the source server (default: 993)', nargs='?',
                     default=993, type=int)
-parser.add_argument('-U', '--destination-user', help='Destination mailbox username', nargs='?', required=True)
-parser.add_argument('-P', '--destination-pass', help='Destination mailbox password', nargs='?', required=True)
-parser.add_argument('-S', '--destination-server', help='Hostname/IP of the destination server', nargs='?', required=True)
-parser.add_argument('--destination-no-ssl', help='Use this option if the destination server does not support TLS/SSL',
+parser.add_argument('-U', '--destination-user', help='destination mailbox username', nargs='?', required=True)
+parser.add_argument('-P', '--destination-pass', help='destination mailbox password', nargs='?', required=True)
+parser.add_argument('-S', '--destination-server', help='hostname or IP of the destination server', nargs='?', required=True)
+parser.add_argument('--destination-no-ssl', help='use this option if the destination server does not support TLS/SSL',
                     action="store_true", default=False)
-parser.add_argument('--destination-port', help='The IMAP port of the destination server (default: 993)', nargs='?',
+parser.add_argument('--destination-port', help='the IMAP port of the destination server (default: 993)', nargs='?',
                     default=993, type=int)
-parser.add_argument('--destination-no-subscribe', help='All copied folders will be not are not subscribed',
+parser.add_argument('--destination-no-subscribe', help='all copied folders will be not are not subscribed',
                     action="store_true", default=False)
 
 args = parser.parse_args()
@@ -171,11 +174,7 @@ print()
 
 #: get source folders
 print('Getting source folders      : ', end='', flush=True)
-for flags, delimiter, name in source.list_folders():
-    db['source']['folders'][name] = {'flags': flags,
-                                     'mails': {},
-                                     'size': 0,
-                                     'buffer': []}
+for flags, delimiter, name in source.list_folders(args.source_root):
 
     source.select_folder(name, readonly=True)
     mails = source.search()
@@ -206,7 +205,7 @@ print('{} mails in {} folders ({})'.format(stats['source_mails'], len(db['source
 
 #: get destination folders
 print('Getting destination folders : ', end='', flush=True)
-for flags, delimiter, name in destination.list_folders():
+for flags, delimiter, name in destination.list_folders(args.destination_root):
     db['destination']['folders'][name] = {'flags': flags, 'mails': {}, 'size': 0}
 
     destination.select_folder(name, readonly=True)
@@ -249,6 +248,9 @@ try:
     for sf_name in sorted(db['source']['folders'], key=lambda x: x.lower()):
         source.select_folder(sf_name, readonly=True)
         df_name = sf_name.replace(source_delimiter, destination_delimiter)
+
+        if args.destination_root:
+            df_name = '{}{}{}'.format(args.destination_root, destination_delimiter, df_name)
 
         #: link special IMAP folder
         if not args.ignore_folder_flags:
