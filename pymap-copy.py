@@ -88,7 +88,7 @@ try:
     print('\nConnecting source           : {}, '.format(args.source_server), end='', flush=True)
     source = IMAPClient(host=args.source_server, port=args.source_port, ssl=not args.source_no_ssl,
                         ssl_context=ssl_context)
-    print('OK')
+    print('\x1b[32mOK\x1b[0m')
 except Exception as e:
     print('\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
     error = True
@@ -97,7 +97,7 @@ try:
     print('Connecting destination      : {}, '.format(args.destination_server), end='', flush=True)
     destination = IMAPClient(host=args.destination_server, port=args.destination_port, ssl=not args.destination_no_ssl,
                              ssl_context=ssl_context)
-    print('OK')
+    print('\x1b[32mOK\x1b[0m')
 except Exception as e:
     print('\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
     error = True
@@ -112,7 +112,7 @@ try:
     #: Login source
     print('Login source                : {}, '.format(args.source_user), end='', flush=True)
     source.login(args.source_user, args.source_pass)
-    print('OK')
+    print('\x1b[32mOK\x1b[0m')
 except (exceptions.LoginError, IMAP4.error) as e:
     error = True
     print('\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
@@ -121,7 +121,7 @@ try:
     #: Login destination
     print('Login destination           : {}, '.format(args.destination_user), end='', flush=True)
     destination.login(args.destination_user, args.destination_pass)
-    print('OK')
+    print('\x1b[32mOK\x1b[0m')
 except (exceptions.LoginError, IMAP4.error) as e:
     error = True
     print('\n\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
@@ -167,7 +167,7 @@ if source_quota and destination_quota:
             print('\n\nAbort!')
             exit()
     else:
-        print('OK')
+        print('\x1b[32mOK\x1b[0m')
 else:
     print('could not check quota')
 
@@ -319,7 +319,7 @@ try:
                         if args.destination_no_subscribe is False:
                             destination.subscribe_folder(df_name)
                         stats['copied_folders'] += 1
-                        print('OK')
+                        print('\x1b[32mOK\x1b[0m')
 
                     except exceptions.IMAPClientError as e:
                         if 'alreadyexists' in str(e).lower():
@@ -413,14 +413,14 @@ else:
 try:
     print('Logout source...', end='', flush=True)
     source.logout()
-    print('OK')
+    print('\x1b[32mOK\x1b[0m')
 except exceptions.IMAPClientError as e:
     print('ERROR: {}'.format(imaperror_decode(e)))
 
 try:
     print('Logout destination...', end='', flush=True)
     destination.logout()
-    print('OK')
+    print('\x1b[32mOK\x1b[0m')
 except exceptions.IMAPClientError as e:
     print('ERROR: {}'.format(imaperror_decode(e)))
 
