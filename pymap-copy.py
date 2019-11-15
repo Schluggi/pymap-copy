@@ -219,21 +219,25 @@ for flags, delimiter, name in destination.list_folders(args.destination_root):
 
     destination.select_folder(name, readonly=True)
     mails = destination.search()
-    if args.incremental:
-        for mail_id, data in destination.fetch(mails, ['RFC822.SIZE', 'ENVELOPE']).items():
-            db['destination']['folders'][name]['mails'][mail_id] = {'size': data[b'RFC822.SIZE'],
-                                                                    'msg_id': data[b'ENVELOPE'].message_id}
-            db['destination']['folders'][name]['size'] += data[b'RFC822.SIZE']
-            stats['destination_mails'] += 1
 
-    else:
-        for mail_id, data in destination.fetch(mails, ['RFC822.SIZE']).items():
+    fetch_data = ['RFC822.SIZE']
+    if args.incremental:
+        fetch_data.append('ENVELOPE')
+
+    while mails:
+        for mail_id, data in destination.fetch(mails[:args.buffer_size], fetch_data).items():
             db['destination']['folders'][name]['mails'][mail_id] = {'size': data[b'RFC822.SIZE']}
             db['destination']['folders'][name]['size'] += data[b'RFC822.SIZE']
+
+            if args.incremental:
+                db['destination']['folders'][name]['mails'][mail_id]['msg_id'] = data[b'ENVELOPE'].message_id
+
             stats['destination_mails'] += 1
+        del mails[:args.buffer_size]
 
     if not destination_delimiter:
         destination_delimiter = delimiter.decode()
+
 print('{} mails in {} folders ({})\n'.format(
     stats['destination_mails'], len(db['destination']['folders']),
     beautysized(sum([f['size'] for f in db['destination']['folders'].values()]))))
