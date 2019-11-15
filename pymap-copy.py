@@ -248,7 +248,14 @@ if args.redirect:
     for redirection in args.redirect:
         try:
             r_source, r_destination = redirection.split(':', 1)
-            if r_source not in db['source']['folders']:
+
+            if r_source.endswith('*'):
+                wildcard_matches = [f for f in db['source']['folders'] if f.startswith(r_source[:-1])]
+                if wildcard_matches:
+                    for folder in wildcard_matches:
+                        redirections[folder] = '{}{}{}'.format(r_destination, destination_delimiter, folder)
+
+            elif r_source not in db['source']['folders']:
                 print('\n\x1b[31m\x1b[1mError:\x1b[0m Source folder "{}" not found\n'.format(r_source))
                 exit()
         except ValueError:
