@@ -8,7 +8,7 @@ SSL/TLS support i wrote my own python-based version. I hope you like it!
 - Copies mails even with flags (seen, answered, ...)
 - Connecting via SSL/TLS (by default)
 - Supports incremental copy (copies only new mails/folders)
-- User specific redirections
+- User specific redirections (with wildcard support)
 - Auto subscribe new folders (by default)
 - Auto find the special IMAP folders Drafts, Trash, etc. (by default)  
 - Quota checking (by default)
