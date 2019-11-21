@@ -29,7 +29,7 @@ SSL/TLS support i wrote my own python-based version. I hope you like it!
 ## Simple usage
 By running the following command the whole structure (folders & mails) from user1 will be copy to the mailbox of user2. 
 ```
-./pymap-copy \
+./pymap-copy.py \
 --source-user=user1 \
 --source-server=server1.example.org \
 --source-pass=2345678 \
