@@ -1,3 +1,4 @@
+from chardet import detect
 from email.header import decode_header
 from ast import literal_eval
 
@@ -35,22 +36,29 @@ def beautysized(b, factor=1000, precision=1):
     return rv
 
 
-def decode_mime(s):
-    words = []
-    try:
-        s = s.decode()
-        for word, encoding in decode_header(s):
-            if isinstance(word, bytes):
-                try:
-                    words.append(word.decode(encoding or 'utf8'))
-                except UnicodeDecodeError:
-                    try:
-                        words.append(word.decode('cp1250'))
-                    except UnicodeDecodeError:
-                        pass
-            else:
-                words.append(word)
-    except UnicodeDecodeError:
-        words.append(str(s))
+def decode_mime(mime_bytes):
 
-    return ''.join(''.join(words).splitlines()).strip()
+    def fallback(mime):
+        charset = detect(mime)['encoding']
+        return mime_bytes.decode(charset)
+
+    words = []
+
+    try:
+        s = mime_bytes.decode()
+
+    except UnicodeDecodeError:
+        words.append(fallback(mime_bytes))
+
+    else:
+        for word, encoding in decode_header(s):
+            try:
+                if type(word) is bytes:
+                    words.append(word.decode(encoding or 'utf8'))
+                else:
+                    words.append(word)
+
+            except (UnicodeDecodeError, LookupError):
+                words.append(fallback(word))
+
+    return ''.join(words)
