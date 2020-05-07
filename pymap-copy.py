@@ -20,7 +20,8 @@ parser.add_argument('--ignore-quota', help='ignores insufficient quota', action=
 parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like Drafts, '
                                                   'Trash, etc.)', action='store_true')
 parser.add_argument('--max-line-length', help='use this option when the program crashes by some mails', type=int)
-parser.add_argument('--no-colors', help='disable ANSI Escape Code (for terminals like powershell or cmd)', type=int)
+parser.add_argument('--no-colors', help='disable ANSI Escape Code (for terminals like powershell or cmd)',
+                    action="store_true")
 parser.add_argument('--skip-empty-folders', help='skip empty folders', action='store_true')
 parser.add_argument('--skip-ssl-verification', help='do not verify any ssl certificate', action='store_true')
 parser.add_argument('-u', '--source-user', help='source mailbox username', nargs='?', required=True)
