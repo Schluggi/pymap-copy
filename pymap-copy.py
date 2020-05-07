@@ -20,6 +20,7 @@ parser.add_argument('--ignore-quota', help='ignores insufficient quota', action=
 parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like Drafts, '
                                                   'Trash, etc.)', action='store_true')
 parser.add_argument('--max-line-length', help='use this option when the program crashes by some mails', type=int)
+parser.add_argument('--no-colors', help='disable ANSI Escape Code (for terminals like powershell or cmd)', type=int)
 parser.add_argument('--skip-empty-folders', help='skip empty folders', action='store_true')
 parser.add_argument('--skip-ssl-verification', help='do not verify any ssl certificate', action='store_true')
 parser.add_argument('-u', '--source-user', help='source mailbox username', nargs='?', required=True)
@@ -45,6 +46,23 @@ parser.add_argument('--destination-no-subscribe', help='all copied folders will 
                     action="store_true", default=False)
 
 args = parser.parse_args()
+
+
+def colorize(s, color=None, bold=False, clear=False):
+    colors = {'red': '\x1b[31m',
+              'green': '\x1b[32m',
+              'cyan': '\x1b[36m'}
+    if args.no_colors:
+        return s
+
+    if clear:
+        s = '\r\x1b[2K{}'.format(s)
+    if bold:
+        s = '\x1b[1m{}'.format(s)
+    if color:
+        s = '{}{}'.format(colors[color], s)
+    return '{}\x1b[0m'.format(s)
+
 
 SPECIAL_FOLDER_FLAGS = [b'\\Archive', b'\\Junk', b'\\Drafts', b'\\Trash', b'\\Sent']
 denied_flags = [b'\\recent']
@@ -88,18 +106,18 @@ try:
     print('\nConnecting source           : {}, '.format(args.source_server), end='', flush=True)
     source = IMAPClient(host=args.source_server, port=args.source_port, ssl=not args.source_no_ssl,
                         ssl_context=ssl_context)
-    print('\x1b[32mOK\x1b[0m')
+    print(colorize('OK', color='green'))
 except Exception as e:
-    print('\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
+    print('{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e)))
     error = True
 
 try:
     print('Connecting destination      : {}, '.format(args.destination_server), end='', flush=True)
     destination = IMAPClient(host=args.destination_server, port=args.destination_port, ssl=not args.destination_no_ssl,
                              ssl_context=ssl_context)
-    print('\x1b[32mOK\x1b[0m')
+    print(colorize('OK', color='green'))
 except Exception as e:
-    print('\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
+    print('{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e)))
     error = True
 
 if error:
@@ -112,19 +130,19 @@ try:
     #: Login source
     print('Login source                : {}, '.format(args.source_user), end='', flush=True)
     source.login(args.source_user, args.source_pass)
-    print('\x1b[32mOK\x1b[0m')
+    print(colorize('OK', color='green'))
 except (exceptions.LoginError, IMAP4.error) as e:
     error = True
-    print('\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
+    print('{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e)))
 
 try:
     #: Login destination
     print('Login destination           : {}, '.format(args.destination_user), end='', flush=True)
     destination.login(args.destination_user, args.destination_pass)
-    print('\x1b[32mOK\x1b[0m')
+    print(colorize('OK', color='green'))
 except (exceptions.LoginError, IMAP4.error) as e:
     error = True
-    print('\n\x1b[31m\x1b[1mError:\x1b[0m {}'.format(imaperror_decode(e)))
+    print('{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e)))
 
 if error:
     print('\nAbort!')
@@ -158,16 +176,16 @@ print('Checking quota              : ', end='', flush=True)
 if source_quota and destination_quota:
     destination_quota_free = destination_quota.limit - destination_quota.usage
     if destination_quota_free < source_quota.usage:
-        print('\x1b[31m\x1b[1mError:\x1b[0m Insufficient quota: '
-              'The source usage is {} KB but there only {} KB free on the destination server'
-              .format(source_quota.usage, destination_quota_free), end='', flush=True)
+        print('{} Insufficient quota: The source usage is {} KB but there only {} KB free on the destination server'
+              .format(colorize('Error:', bold=True, color='cyan'), source_quota.usage, destination_quota_free),
+              end='', flush=True)
         if args.ignore_quota:
             print(' (ignoring)')
         else:
             print('\n\nAbort!')
             exit()
     else:
-        print('\x1b[32mOK\x1b[0m')
+        print(colorize('OK', color='green'))
 else:
     print('could not check quota')
 
@@ -261,13 +279,14 @@ if args.redirect:
                 not_found.append(r_source)
 
         except ValueError:
-            print('\n\x1b[31m\x1b[1mError:\x1b[0m Could not parse redirection: "{}"\n'.format(redirection))
+            print('\n{} Could not parse redirection: "{}"\n'.format(colorize('Error:', color='red', bold=True),
+                                                                    imaperror_decode(e), redirection))
             exit()
         else:
             redirections[r_source] = r_destination
 
 if not_found:
-    print('\n\x1b[31m\x1b[1mError:\x1b[0m Source folder not found: {}\n'.format(', '.join(not_found)))
+    print('\n{} Source folder not found: {}\n'.format(colorize('Error:', color='red', bold=True), ', '.join(not_found)))
     exit()
 
 try:
@@ -311,7 +330,7 @@ try:
 
                 if args.skip_empty_folders and not db['source']['folders'][sf_name]['mails']:
                     stats['skipped_folders']['empty'] += 1
-                    print('\x1b[36mSkipped! (skip-empty-folders mode)\x1b[0m\n')
+                    print('{} \n'.format(colorize('Skipped! (skip-empty-folders mode)', color='cyan')))
                     continue
                 else:
                     try:
@@ -319,15 +338,15 @@ try:
                         if args.destination_no_subscribe is False:
                             destination.subscribe_folder(df_name)
                         stats['copied_folders'] += 1
-                        print('\x1b[32mOK\x1b[0m')
+                        print(colorize('OK', color='green'))
 
                     except exceptions.IMAPClientError as e:
                         if 'alreadyexists' in str(e).lower():
                             stats['skipped_folders']['already_exists'] += 1
-                            print('\x1b[36mSkipped! (already exists)\x1b[0m\n')
+                            print('{} \n'.format(colorize('Skipped! (already exists)', color='cyan')))
                         else:
                             e = imaperror_decode(e)
-                            print('\x1b[31m\x1b[1mError:\x1b[0m {}\n'.format(e))
+                            print('{} {}\n'.format(colorize('Error:', color='red', bold=True), e))
                             if args.abort_on_error:
                                 raise KeyboardInterrupt
                             continue
@@ -335,9 +354,8 @@ try:
             continue
 
         for buffer_counter, buffer in enumerate(db['source']['folders'][sf_name]['buffer']):
-            print('\r\x1b[2K[{:>5.1f}%] Progressing... (loading buffer {}/{})'.format(
-                progress, buffer_counter+1,
-                len(db['source']['folders'][sf_name]['buffer'])), end='')
+            print(colorize('[{:>5.1f}%] Progressing... (loading buffer {}/{})'.format(
+                progress, buffer_counter+1, len(db['source']['folders'][sf_name]['buffer'])), clear=True), end='')
 
             for i, fetch in enumerate(source.fetch(buffer, ['FLAGS', 'RFC822', 'INTERNALDATE']).items()):
                 progress = stats['processed'] / stats['source_mails'] * 100
@@ -351,14 +369,14 @@ try:
                 subject = db['source']['folders'][sf_name]['mails'][mail_id]['subject']
 
                 #: copy mail
-                print('\r\x1b[2K[{:>5.1f}%] Progressing... (buffer {}/{}) (mail {}/{}) ({}) ({}): {}'.format(
+                print(colorize('[{:>5.1f}%] Progressing... (buffer {}/{}) (mail {}/{}) ({}) ({}): {}'.format(
                     progress, buffer_counter+1, len(db['source']['folders'][sf_name]['buffer']), i+1, len(buffer),
-                    beautysized(size), date, subject), end='')
+                    beautysized(size), date, subject), clear=True), end='')
 
                 if size == 0:
                     stats['skipped_mails']['zero_size'] += 1
                     stats['processed'] += 1
-                    print('\n\x1b[36mSkipped! (zero sized)\x1b[0m\n', end='')
+                    print('\n{} \n'.format(colorize('Skipped! (zero sized)', color='cyan')), end='')
 
                 elif args.incremental and df_name in db['destination']['folders'] and \
                         msg_id in [m['msg_id'] for m in db['destination']['folders'][df_name]['mails'].values()]:
@@ -374,7 +392,7 @@ try:
                         if args.max_line_length:
                             if any([len(line) > args.max_line_length for line in msg.split(b'\n')]):
                                 stats['skipped_mails']['max_line_length'] += 1
-                                print('\n\x1b[36mSkipped! (line length)\x1b[0m\n', end='')
+                                print('\n{} \n'.format(colorize('Skipped! (line length)', color='cyan')), end='')
                                 continue
 
                         status = destination.append(df_name, msg, (flag for flag in flags if flag.lower() not in
@@ -391,14 +409,14 @@ try:
                                                 'folder': df_name,
                                                 'date': date,
                                                 'id': msg_id.decode()})
-                        print('\n\x1b[31m\x1b[1mError:\x1b[0m {}\n'.format(e))
+                        print('\n{} {}\n'.format(colorize('Error:', color='red', bold=True), e))
                         if args.abort_on_error:
                             raise KeyboardInterrupt
 
                     finally:
                         stats['processed'] += 1
 
-        print('\r\x1b[2KFolder finished!')
+        print(colorize('Folder finished!', clear=True))
 
         if not args.dry_run:
             print()
@@ -413,19 +431,20 @@ else:
 try:
     print('Logout source...', end='', flush=True)
     source.logout()
-    print('\x1b[32mOK\x1b[0m')
+    print(colorize('OK', color='green'))
 except exceptions.IMAPClientError as e:
     print('ERROR: {}'.format(imaperror_decode(e)))
 
 try:
     print('Logout destination...', end='', flush=True)
     destination.logout()
-    print('\x1b[32mOK\x1b[0m')
+    print(colorize('OK', color='green'))
 except exceptions.IMAPClientError as e:
     print('ERROR: {}'.format(imaperror_decode(e)))
 
-print('\n\nCopied \x1b[1m{}/{}\x1b[0m mails and \x1b[1m{}/{}\x1b[0m folders in {:.2f}s\n'.format(
-    stats['copied_mails'], stats['source_mails'], stats['copied_folders'], len(db['source']['folders']),
+print('\n\nCopied {} mails and {} folders in {:.2f}s\n'.format(
+    colorize('{}/{}'.format(stats['copied_mails'], stats['source_mails']), bold=True),
+    colorize('{}/{}'.format(stats['copied_folders'], len(db['source']['folders'])), bold=True),
     time()-stats['start_time']))
 
 if args.dry_run:
