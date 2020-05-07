@@ -11,6 +11,7 @@ parser = ArgumentParser(description='', epilog='pymap-copy by Schluggi')
 parser.add_argument('-b', '--buffer-size', help='the number of mails loaded with a single query (default: 50)',
                     nargs='?', type=int, default=50)
 parser.add_argument('-d', '--dry-run', help='copy/creating nothing, just feign', action="store_true")
+parser.add_argument('-l', '--list', help='copy/creating nothing, just listing folders', action="store_true")
 parser.add_argument('-i', '--incremental', help='copy/creating only new folders/mails', action="store_true")
 parser.add_argument('--abort-on-error', help='the process will interrupt at the first mail transfer error',
                     action="store_true")
@@ -260,6 +261,23 @@ for flags, delimiter, name in destination.list_folders(args.destination_root):
 print('{} mails in {} folders ({})\n'.format(
     stats['destination_mails'], len(db['destination']['folders']),
     beautysized(sum([f['size'] for f in db['destination']['folders'].values()]))))
+
+
+#: list mode
+if args.list:
+    print(colorize('Source:', bold=True))
+    for name in db['source']['folders']:
+        print('{} ({} mails, {})'.format(name, len(db['source']['folders'][name]['mails']),
+                                         beautysized(db['source']['folders'][name]['size'])))
+
+    print('\n{}'.format(colorize('Destination:', bold=True)))
+    for name in db['destination']['folders']:
+        print('{} ({} mails, {})'.format(name, len(db['destination']['folders'][name]['mails']),
+                                         beautysized(db['destination']['folders'][name]['size'])))
+
+    print('\n{}'.format(colorize('Everything skipped! (list mode)', color='cyan')))
+    exit()
+
 
 #: custom links
 redirections = {}
