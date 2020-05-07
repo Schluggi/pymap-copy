@@ -448,7 +448,7 @@ print('\n\nCopied {} mails and {} folders in {:.2f}s\n'.format(
     time()-stats['start_time']))
 
 if args.dry_run:
-    print('Everything skipped! (dry-run)')
+    print(colorize('Everything skipped! (dry-run)', color='cyan'))
 else:
     print('Skipped folders   : {}'.format(sum([stats['skipped_folders'][c] for c in stats['skipped_folders']])))
     print('├─ Empty          : {} (skip-empty-folders mode only)'.format(stats['skipped_folders']['empty']))
