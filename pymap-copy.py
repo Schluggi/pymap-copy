@@ -355,7 +355,7 @@ try:
                     progress, buffer_counter+1, len(db['source']['folders'][sf_name]['buffer']), i+1, len(buffer),
                     beautysized(size), date, subject), end='')
 
-                if size is 0:
+                if size == 0:
                     stats['skipped_mails']['zero_size'] += 1
                     stats['processed'] += 1
                     print('\n\x1b[36mSkipped! (zero sized)\x1b[0m\n', end='')
