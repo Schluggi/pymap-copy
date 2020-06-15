@@ -45,6 +45,8 @@ parser.add_argument('--destination-port', help='the IMAP port of the destination
                     default=993, type=int)
 parser.add_argument('--destination-root', help='defines the destination root (case sensitive)', nargs='?', default='',
                     type=str)
+parser.add_argument('--destination-root-merge', help='ignores the destination root if the folder is already part of it',
+                    action='store_true')
 parser.add_argument('--destination-no-subscribe', help='all copied folders will be not are not subscribed',
                     action="store_true", default=False)
 
@@ -315,7 +317,10 @@ try:
         df_name = sf_name.replace(source_delimiter, destination_delimiter)
 
         if args.destination_root:
-            df_name = '{}{}{}'.format(args.destination_root, destination_delimiter, df_name)
+            if args.destination_root_merge is False or \
+                    (df_name.startswith('{}{}'.format(args.destination_root, destination_delimiter)) is False
+                     and df_name != args.destination_root):
+                df_name = '{}{}{}'.format(args.destination_root, destination_delimiter, df_name)
 
         #: link special IMAP folder
         if not args.ignore_folder_flags:
