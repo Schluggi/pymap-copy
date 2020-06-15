@@ -16,7 +16,8 @@ parser.add_argument('-i', '--incremental', help='copy/creating only new folders/
 parser.add_argument('--abort-on-error', help='the process will interrupt at the first mail transfer error',
                     action="store_true")
 parser.add_argument('--denied-flags', help='mails with this flags will be skipped', type=str)
-parser.add_argument('-r', '--redirect', help='redirect a folder (source:destination --denied-flags seen,recent -d)', action='append')
+parser.add_argument('-r', '--redirect', help='redirect a folder (source:destination --denied-flags seen,recent -d)',
+                    action='append')
 parser.add_argument('--ignore-quota', help='ignores insufficient quota', action='store_true')
 parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like Drafts, '
                                                   'Trash, etc.)', action='store_true')
