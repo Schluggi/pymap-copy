@@ -1,4 +1,6 @@
 # pymap-copy
+[![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KPG2MY37LCC24&source=url)
+
 In our company we often have to copy mailboxes from one to another server. For this we used 
 [IMAPCopy](http://www.ardiehl.de/imapcopy/) as so far. Due to compatibility issues, first of all the missing 
 SSL/TLS support i wrote my own python-based version. I hope you like it!
