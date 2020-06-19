@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2020 Schluggi <schluggi@colorfreedom.org>
+Copyright (c) 2020 Lukas Schulte-Tickmann <schluggi@colorfreedom.org>
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
