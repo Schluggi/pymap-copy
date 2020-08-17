@@ -37,28 +37,38 @@ def beautysized(b, factor=1000, precision=1):
 
 
 def decode_mime(mime_bytes):
-
-    def fallback(mime):
-        charset = detect(mime)['encoding']
-        return mime_bytes.decode(charset)
-
     words = []
 
     try:
+        #: convert to string for decode_header()
         s = mime_bytes.decode()
 
     except UnicodeDecodeError:
-        words.append(fallback(mime_bytes))
+        #: try to detect encoding
+        encoding = detect(mime_bytes)['encoding']
+
+        if encoding:
+            return mime_bytes.decode(encoding)
+        else:
+            #: return raw bytes without the b''
+            return repr(mime_bytes)[2:-1]
 
     else:
         for word, encoding in decode_header(s):
-            try:
-                if type(word) is bytes:
-                    words.append(word.decode(encoding or 'utf8'))
-                else:
-                    words.append(word)
+            if type(word) is bytes:
+                try:
+                    if encoding:
+                        if encoding.startswith('dos-'):
+                            encoding = 'cp{}'.format(encoding.split('dos-', 1)[1])
+                    else:
+                        encoding = 'utf8'
 
-            except (UnicodeDecodeError, LookupError):
-                words.append(fallback(word))
+                    words.append(word.decode(encoding))
+
+                except (UnicodeDecodeError, LookupError):
+                    #: return raw bytes without the b''
+                    return repr(mime_bytes)[2:-1]
+            else:
+                words.append(word)
 
     return ''.join(words)
