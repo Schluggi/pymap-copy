@@ -3,12 +3,12 @@
 
 In our company we often have to copy mailboxes from one to another server. For this we used 
 [IMAPCopy](http://www.ardiehl.de/imapcopy/) as so far. Due to compatibility issues, first of all the missing 
-SSL/TLS support i wrote my own python-based version. I hope you like it!
+SSL/TLS and STARTTLS support i wrote my own python-based version. I hope you like it!
 
 ## Features
 - Copies folders and subfolders
 - Copies mails even with flags (seen, answered, ...)
-- Connecting via SSL/TLS (by default)
+- Connecting via SSL/TLS (by default), or optionally use STARTTLS
 - Supports incremental copy (copies only new mails/folders)
 - User specific redirections (with wildcard support)
 - Auto subscribe new folders (by default)
@@ -84,6 +84,9 @@ As always: Do a dry run (`-d/--dry-run`) to ensure that everything is going well
 You could change the buffer size with `-b`/`--buffer-size` to increase the download speed from the source. 
 If you know the source mailbox has a lot of small mails use a higher size. In the case of lager mails use a lower size 
 to counter timeouts. For bad internet connections you also should use a lower sized buffer.
+
+#### Use of source-mailbox argument
+As a further optimization you can target specific mailboxes you want to sync to the destination (versus the default of everything).  Use `--source-mailbox <NAME>` to only sync that one mailbox. The flag can be specified multiple times to indicate multiple mailboxes to sync. The flag is NOT recursive and will only sync the contents of the folder.
 
 ## Microsoft Exchange Server IMAP bug 
 If your destination is an Exchange Server (EX) you'll properly get an `bad command` exception while coping some mails. 
