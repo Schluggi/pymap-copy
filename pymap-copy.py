@@ -32,7 +32,8 @@ parser.add_argument('-s', '--source-server', help='hostname or  of the source IM
                     default=False)
 parser.add_argument('--source-no-ssl', help='use this option if the destination server does not support TLS/SSL',
                     action="store_true")
-parser.add_argument('--source-use-starttls', help='use this option when connecting to an optional tls port (143) but require starttls',
+parser.add_argument('--source-use-starttls',
+                    help='use this option when connecting to an optional tls port (143) but require starttls',
                     action="store_true", default=False)
 parser.add_argument('--source-port', help='the IMAP port of the source server (default: 993)', nargs='?',
                     default=993, type=int)
@@ -43,14 +44,14 @@ parser.add_argument('-S', '--destination-server', help='hostname or IP of the de
                     required=True)
 parser.add_argument('--destination-no-ssl', help='use this option if the destination server does not support TLS/SSL',
                     action="store_true", default=False)
-parser.add_argument('--destination-use-starttls', help='use this option when connecting to an optional tls port (143) but require starttls',
+parser.add_argument('--destination-use-starttls',
+                    help='use this option when connecting to an optional tls port (143) but require starttls',
                     action="store_true", default=False)
-parser.add_argument('--destination-use-idle', help='use IMAP IDLE to keep the destination connection alive (important for massive source mailboxes)',
-                    action="store_true", default=True)
 parser.add_argument('--destination-port', help='the IMAP port of the destination server (default: 993)', nargs='?',
                     default=993, type=int)
 parser.add_argument('--source-mailbox', help='if specified, only sync this folder (case sensitive). Can be repeated '
-                    'multiple times to source multiple mailboxes.', action='append', nargs='?', default=list(), type=str)
+                    'multiple times to source multiple mailboxes.', action='append', nargs='?', default=list(),
+                    type=str)
 parser.add_argument('--destination-root', help='defines the destination root (case sensitive)', nargs='?', default='',
                     type=str)
 parser.add_argument('--destination-root-merge', help='ignores the destination root if the folder is already part of it',
@@ -59,6 +60,7 @@ parser.add_argument('--destination-no-subscribe', help='all copied folders will 
                     action="store_true", default=False)
 
 args = parser.parse_args()
+
 
 def colorize(s, color=None, bold=False, clear=False):
     colors = {'red': '\x1b[31m',
@@ -94,12 +96,14 @@ stats = {
     'skipped_folders': {
         'already_exists': 0,
         'empty': 0,
-        'dry-run': 0
+        'dry-run': 0,
+        'by_mailbox': 0
     },
     'skipped_mails': {
         'already_exists': 0,
         'zero_size': 0,
-        'max_line_length': 0
+        'max_line_length': 0,
+        'no_envelope': 0
     },
     'copied_mails': 0,
     'copied_folders': 0
@@ -117,7 +121,7 @@ if args.skip_ssl_verification:
 try:
     print('\nConnecting source           : {}, '.format(args.source_server), end='', flush=True)
 
-    # if we are using starttls, then we must connect without an SSL'd connection
+    #: if we are using starttls, then we must connect without an SSL'd connection
     if args.source_use_starttls:
         use_ssl = False
     else:
@@ -127,17 +131,18 @@ try:
 
     if args.source_use_starttls:
         source.starttls(ssl_context=ssl_context)
-        print(colorize('OK - STARTTLS', color='green'))
+        print(colorize('OK (STARTTLS)', color='green'))
 
     elif not args.source_use_starttls and not use_ssl:
-        print(colorize('OK', color='green'), "-", colorize('NOT ENCRYPTED', color='red'))
+        print('{} ({})'.format(colorize('OK ', color='green'), colorize('NOT ENCRYPTED', color='red')))
             
     else:  # default is ssl
-        print(colorize('OK', color='green'))
+        print(colorize('OK (SSL/TLS)', color='green'))
 
 except Exception as e:
     print('{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e)))
     error = True
+
 
 def connect_to_destination(args):
     error = False
@@ -150,17 +155,18 @@ def connect_to_destination(args):
         else:
             use_ssl = not args.destination_no_ssl
 
-        destination = IMAPClient(host=args.destination_server, port=args.destination_port, ssl=use_ssl, ssl_context=ssl_context)
+        destination = IMAPClient(host=args.destination_server, port=args.destination_port, ssl=use_ssl,
+                                 ssl_context=ssl_context)
 
         if args.destination_use_starttls:
             destination.starttls(ssl_context=ssl_context)
-            print(colorize('OK - STARTTLS', color='green'))
+            print(colorize('OK (STARTTLS)', color='green'))
 
-        elif not args.destination_use_starttls and not use_ssl:
-            print(colorize('OK', color='green'), "-", colorize('NOT ENCRYPTED', color='red'))
-                
+        elif not args.source_use_starttls and not use_ssl:
+            print('{} ({})'.format(colorize('OK ', color='green'), colorize('NOT ENCRYPTED', color='red')))
+
         else:  # default is ssl
-            print(colorize('OK', color='green'))
+            print(colorize('OK (SSL/TLS)', color='green'))
 
     except Exception as e:
         print('{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e)))
@@ -171,8 +177,9 @@ def connect_to_destination(args):
         exit()
 
     return destination
-destination = connect_to_destination(args)
 
+
+destination = connect_to_destination(args)
 print()
 
 try:
@@ -183,6 +190,7 @@ try:
 except (exceptions.LoginError, IMAP4.error) as e:
     error = True
     print('{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e)))
+
 
 def login_to_destination(destination, args):
     error = False
@@ -198,11 +206,9 @@ def login_to_destination(destination, args):
     if error:
         print('\nAbort!')
         exit()
-login_to_destination(destination, args)
 
-destination = connect_to_destination(args)
-login_to_destination(destination, args)
 
+login_to_destination(destination, args)
 print()
 
 #: get quota from source
@@ -247,51 +253,43 @@ else:
 
 print()
 
-# attempt to drop the destination connection into idle mode, this hopefully will keep the connection
-# open for us and prevent a logout/timeout from happening while we parse particularly large source mailboxes
-did_idle_fail = True
+
 def start_imap_idle(client):
-    try:
-        if args.destination_use_idle:
-            # must select a folder before invoking idle. we simply select the first folder to idle on
-            flags, delimiter, name = destination.list_folders(args.destination_root)[0]
-            destination.select_folder(name, readonly=True)
-            client.idle()
-            did_idle_fail = False
-    except Exception as e:
-        did_idle_fail = True
-        print(f'WARNING: Unable to idle on destination imap connection. Will continue without it. (got exception {type(e)}: {e})')
+    #: must select a folder before invoking idle. we simply select the first folder to idle on
+    _, _, some_folder = client.list_folders()[0]
+    client.select_folder(some_folder, readonly=True)
+    client.idle()
+
 
 def end_imap_idle(client):
     """
-    Rather simple: stop idle mode to allow normal commands (if idle did not fail)
+    Rather simple: stop idle mode to allow normal commands
     """
-    if not did_idle_fail:
-        client.idle_done()
+    client.idle_done()
+
 
 def restart_imap_idle(client):
     """
     Restart the idle session so we don't timeout. intended to be invoked by long running code where needed to keep the
     connection alive
     """
-    if not did_idle_fail:
-        end_imap_idle(client)
-        start_imap_idle(client)
+    end_imap_idle(client)
+    start_imap_idle(client)
 
-if args.destination_use_idle:
-    start_imap_idle(destination)
-    restart_imap_idle(destination)
-else:
-    print(f' Skipping destination IMAP IDLE command')
 
+start_imap_idle(destination)
 
 #: get source folders
-print('Getting source folders      : ', flush=True)
+print(colorize('Getting source folders      : loading (this can take a while)', clear=True), flush=True, end='')
 for flags, delimiter, name in source.list_folders(args.source_root):
-    print(f'  > Processing folder "{name}"...', flush=True)
+
+    if not source_delimiter:
+        source_delimiter = delimiter.decode()
+
     if args.source_mailbox:
         if name not in args.source_mailbox:
-            print(f'  >> Skipping folder "{name}" as it does not in the source mailbox restrictions of "{args.source_mailbox}"')
+            print(colorize('Getting source folders      : Progressing ({} mails) (skipping): {}'.
+                           format(stats['source_mails'], name), clear=True), flush=True, end='')
             continue
 
     source.select_folder(name, readonly=True)
@@ -310,8 +308,8 @@ for flags, delimiter, name in source.list_folders(args.source_root):
         db['source']['folders'][name]['buffer'].append(mails[:args.buffer_size])
 
         for mail_id, data in source.fetch(mails[:args.buffer_size], ['RFC822.SIZE', 'ENVELOPE']).items():
-            if b'ENVELOPE' not in data:
-                print(f'  Encountered message with no ENVELOPE? Skipping it. Folder: "{name}", Mail Id: "{mail_id}", Data: "{data}"')
+            if b'ENVELOPE' not in data:  # Encountered message with no ENVELOPE? Skipping it
+                stats['skipped_mails']['no_envelope'] += 1
                 continue
             elif data[b'ENVELOPE'].subject:
                 subject = decode_mime(data[b'ENVELOPE'].subject)
@@ -324,8 +322,8 @@ for flags, delimiter, name in source.list_folders(args.source_root):
             db['source']['folders'][name]['size'] += data[b'RFC822.SIZE']
             stats['source_mails'] += 1
 
-            if stats['source_mails'] % 1000 == 0:  # add message to show progress when processing massive folders
-                print(f"  - Loaded {stats['source_mails']} total emails so far..")
+            print(colorize('Getting source folders      : Progressing ({} mails): {}'.
+                           format(stats['source_mails'], name), clear=True), flush=True, end='')
 
             # adding a check to refresh our imap idle session on the destination imap connection so we do not
             # get logged out.  This is possibly too frequently, but just taking a guess here.
@@ -334,26 +332,31 @@ for flags, delimiter, name in source.list_folders(args.source_root):
 
         del mails[:args.buffer_size]
 
-    if not source_delimiter:
-        source_delimiter = delimiter.decode()
+print(colorize('Getting source folders      : {} mails in {} folders ({})'.
+               format(stats['source_mails'], len(db['source']['folders']),
+                      beautysized(sum([f['size'] for f in db['source']['folders'].values()]))), clear=True))
 
-print('{} mails in {} folders ({})'.format(stats['source_mails'], len(db['source']['folders']),
-                                           beautysized(sum([f['size'] for f in db['source']['folders'].values()]))))
+
+end_imap_idle(destination)
+start_imap_idle(source)
+
 
 #: get destination folders
-print('Getting destination folders : ', end='', flush=True)
-end_imap_idle(destination)
-destination = connect_to_destination(args)  # refresh the dest connection as the old session might have timed out in large source mailboxes
-login_to_destination(destination, args)  # re-login to the destination now that we have a new connection
+print(colorize('Getting destination folders : loading (this can take a while)', clear=True), flush=True, end='')
 for flags, delimiter, name in destination.list_folders(args.destination_root):
-    db['destination']['folders'][name] = {'flags': flags, 'mails': {}, 'size': 0}
 
-    # no need to process the source destination mailbox if we skipped the source for it
+    if not destination_delimiter:
+        destination_delimiter = delimiter.decode()
+
+    #: no need to process the source destination mailbox if we skipped the source for it
     if args.source_mailbox:
-        destination_mailbox_without_root = name.replace(f'{args.destination_root}/', "")
-        if destination_mailbox_without_root not in args.source_mailbox:
-            print(f'  >> Skipping destination folder "{name}" which with root removed ("{destination_mailbox_without_root}"), does not match an entry in the source mailbox restrictions of "{args.source_mailbox}".')
+        if name.replace(destination_delimiter, source_delimiter) not in args.source_mailbox:
+            print(colorize('Getting destination folders : Progressing ({} mails) (skipping): {}'.
+                           format(stats['destination_mails'], name), clear=True), flush=True, end='')
+            stats['skipped_folders']['by_mailbox'] += 1
             continue
+
+    db['destination']['folders'][name] = {'flags': flags, 'mails': {}, 'size': 0}
 
     destination.select_folder(name, readonly=True)
     mails = destination.search()
@@ -364,7 +367,6 @@ for flags, delimiter, name in destination.list_folders(args.destination_root):
 
     while mails:
         for mail_id, data in destination.fetch(mails[:args.buffer_size], fetch_data).items():
-            print(f'  > Processing folder "{name}"', flush=True)
             db['destination']['folders'][name]['mails'][mail_id] = {'size': data[b'RFC822.SIZE']}
             db['destination']['folders'][name]['size'] += data[b'RFC822.SIZE']
 
@@ -372,16 +374,14 @@ for flags, delimiter, name in destination.list_folders(args.destination_root):
                 db['destination']['folders'][name]['mails'][mail_id]['msg_id'] = data[b'ENVELOPE'].message_id
 
             stats['destination_mails'] += 1
+            print(colorize('Getting destination folders : Progressing ({} mails): {}'.
+                           format(stats['destination_mails'], name), clear=True), flush=True, end='')
         del mails[:args.buffer_size]
 
-    if not destination_delimiter:
-        print(delimiter.decode(), flush=True)
-        destination_delimiter = delimiter.decode()
 
-print('{} mails in {} folders ({})\n'.format(
-    stats['destination_mails'], len(db['destination']['folders']),
-    beautysized(sum([f['size'] for f in db['destination']['folders'].values()]))))
-
+print(colorize('Getting destination folders : {} mails in {} folders ({})\n'.
+               format(stats['destination_mails'], len(db['destination']['folders']),
+                      beautysized(sum([f['size'] for f in db['destination']['folders'].values()]))), clear=True))
 
 #: list mode
 if args.list:
@@ -395,7 +395,11 @@ if args.list:
         print('{} ({} mails, {})'.format(name, len(db['destination']['folders'][name]['mails']),
                                          beautysized(db['destination']['folders'][name]['size'])))
 
-    print('\n{}'.format(colorize('Everything skipped! (list mode)', color='cyan')))
+    if args.source_mailbox:
+        print('\n{}'.format(colorize('Everything skipped! (list mode, list was filtered by the source mailbox argument)',
+                                     color='cyan')))
+    else:
+        print('\n{}'.format(colorize('Everything skipped! (list mode)', color='cyan')))
     exit()
 
 
@@ -427,6 +431,8 @@ if args.redirect:
 if not_found:
     print('\n{} Source folder not found: {}\n'.format(colorize('Error:', color='red', bold=True), ', '.join(not_found)))
     exit()
+
+end_imap_idle(source)
 
 try:
     for sf_name in sorted(db['source']['folders'], key=lambda x: x.lower()):
@@ -502,17 +508,11 @@ try:
             for i, fetch in enumerate(source.fetch(buffer, ['FLAGS', 'RFC822', 'INTERNALDATE']).items()):
                 progress = stats['processed'] / stats['source_mails'] * 100
                 mail_id, data = fetch
-                
-                # placeholders, so we can still attempt to use them in error reporting
-                flags = "(unk)"
-                msg = "(unk)"
-                date = "(unk)"
-                msg_id = b"(unk)"
-                size = "(unk)"
-                subject = "(unk)"
 
-                # adding this try statement because I ran into issues where a message wouldn't have any flags defined
-                # I think it's related to an issue with reading a flag with no envelope above
+                #: placeholders, so we can still attempt to use them in error reporting
+                flags = msg = date = size = subject = "(unknown)"
+                msg_id = b"(unknown)"
+
                 try:
                     msg_id = db['source']['folders'][sf_name]['mails'][mail_id]['msg_id']
                     size = db['source']['folders'][sf_name]['mails'][mail_id]['size']
@@ -522,18 +522,19 @@ try:
                     msg = data[b'RFC822']
                     date = data[b'INTERNALDATE']
 
-
                 except KeyError as e:
-                    print(colorize(f'  Error "{e}" when reading data from message, will skip: '
-                                   f'Mail_id "{mail_id}" in source folder "{sf_name}", got data "{data}"', color='red'))
+                    try:
+                        msg_id_decoded = msg_id.decode()
+                    except Exception as sub_exception:
+                        msg_id_decoded = '(decode failure): {}'.format(sub_exception)
 
                     stats['errors'].append({'size': size,
                                             'subject': subject,
-                                            'exception': f'{type(e).__name__}: {e}',
+                                            'exception': '{}: {}'.format(type(e).__name__, e),
                                             'folder': df_name,
                                             'date': date,
-                                            'id': msg_id.decode()})
-
+                                            'id': msg_id_decoded})
+                    print('\n{} {}\n'.format(colorize('Error:', color='red', bold=True), e))
                     continue
 
                 #: copy mail
@@ -566,33 +567,33 @@ try:
                         status = destination.append(df_name, msg, (flag for flag in flags if flag.lower() not in
                                                                    denied_flags), msg_time=date)
 
-                        # dovecot returns completed; gmail returns success
+                        #: differed IMAP servers have differed return codes
                         success_messages = [b'append completed', b'(success)']
                         if any([msg in status.lower() for msg in success_messages]):
                             stats['copied_mails'] += 1
                         else:
-                            raise exceptions.IMAPClientError(f'Unable to confirm append success via status message! Got "{status.decode()}"')
+                            raise exceptions.IMAPClientError('Unknown success message: {}'.format(status.decode()))
+
                     except exceptions.IMAPClientError as e:
                         e_decoded = imaperror_decode(e)
+
                         try:
                             msg_id_decoded = msg_id.decode()
                         except Exception as sub_exception:
-                            msg_id_decoded = f'(decode failure: {sub_exception})'
+                            msg_id_decoded = '(decode failure): {}'.format(sub_exception)
+
                         error_information = {'size': beautysized(size),
                                              'subject': subject,
-                                             'exception': f'{type(e).__name__}: {e_decoded}',
+                                             'exception': '{}: {}'.format(type(e).__name__, e),
                                              'folder': df_name,
                                              'date': date,
                                              'id': msg_id_decoded}
+
                         stats['errors'].append(error_information)
-                        print('\n{} {} {}\n'.format(colorize('Error:', color='red', bold=True), e, error_information))
+                        print('\n{} {}\n'.format(colorize('Error:', color='red', bold=True), e))
+
                         if args.abort_on_error:
                             raise KeyboardInterrupt
-
-                        # reconnect the imap session as gmail disconnects on certain error conditions
-                        print('  Reconnecting after error to ensure IMAP connection to destination is still alive..')
-                        destination = connect_to_destination(args)
-                        login_to_destination(destination, args)
 
                     finally:
                         stats['processed'] += 1
@@ -633,10 +634,12 @@ if args.dry_run:
 else:
     print('Skipped folders   : {}'.format(sum([stats['skipped_folders'][c] for c in stats['skipped_folders']])))
     print('├─ Empty          : {} (skip-empty-folders mode only)'.format(stats['skipped_folders']['empty']))
+    print('├─ By mailbox     : {} (source-mailbox mode only)'.format(stats['skipped_folders']['by_mailbox']))
     print('└─ Already exists : {} '.format(stats['skipped_folders']['already_exists']))
     print()
     print('Skipped mails     : {}'.format(sum([stats['skipped_mails'][c] for c in stats['skipped_mails']])))
     print('├─ Zero sized     : {}'.format(stats['skipped_mails']['zero_size']))
+    print('├─ No envelope    : {}'.format(stats['skipped_mails']['no_envelope']))
     print('├─ Line length    : {} (max-line-length mode only)'.format(stats['skipped_mails']['max_line_length']))
     print('└─ Already exists : {} (incremental mode only)'.format(stats['skipped_mails']['already_exists']))
 
