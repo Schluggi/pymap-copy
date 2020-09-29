@@ -160,13 +160,13 @@ def connect_to_destination(args):
 
         if args.destination_use_starttls:
             destination.starttls(ssl_context=ssl_context)
-            print(colorize('OK (STARTTLS)', color='green'))
+            print('{} ({})'.format(colorize('OK ', color='green'), colorize('STARTTLS', color='green')))
 
-        elif not args.source_use_starttls and not use_ssl:
+        elif not args.destination_use_starttls and not use_ssl:
             print('{} ({})'.format(colorize('OK ', color='green'), colorize('NOT ENCRYPTED', color='red')))
 
         else:  # default is ssl
-            print(colorize('OK (SSL/TLS)', color='green'))
+            print('{} ({})'.format(colorize('OK ', color='green'), colorize('SSL/TLS', color='green')))
 
     except Exception as e:
         print('{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e)))
