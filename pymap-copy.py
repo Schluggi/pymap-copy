@@ -163,7 +163,8 @@ stats = {
         'already_exists': 0,
         'empty': 0,
         'dry-run': 0,
-        'by_mailbox': 0
+        'by_mailbox': 0,
+        'no_parent': 0
     },
     'skipped_mails': {
         'already_exists': 0,
@@ -304,7 +305,7 @@ for flags, delimiter, name in source.list_folders(args.source_root):
                              'folder': name,
                              'date': 'unknown',
                              'id': 'unknown'}
-
+        stats['skipped_folders']['no_parent'] += 1
         stats['errors'].append(error_information)
         continue
 
@@ -655,17 +656,18 @@ print('\n\nCopied {} mails and {} folders in {:.2f}s\n'.format(
 if args.dry_run:
     print(colorize('Everything skipped! (dry-run)', color='cyan'))
 else:
-    print('Skipped folders   : {}'.format(sum([stats['skipped_folders'][c] for c in stats['skipped_folders']])))
-    print('├─ Empty          : {} (skip-empty-folders mode only)'.format(stats['skipped_folders']['empty']))
-    print('├─ By mailbox     : {} (source-mailbox mode only)'.format(stats['skipped_folders']['by_mailbox']))
-    print('└─ Already exists : {} '.format(stats['skipped_folders']['already_exists']))
+    print('Skipped folders     : {}'.format(sum([stats['skipped_folders'][c] for c in stats['skipped_folders']])))
+    print('├─ Empty            : {} (skip-empty-folders mode only)'.format(stats['skipped_folders']['empty']))
+    print('├─ By mailbox       : {} (source-mailbox mode only)'.format(stats['skipped_folders']['by_mailbox']))
+    print('├─ No parent folder : {}'.format(stats['skipped_folders']['no_parent']))
+    print('└─ Already exists   : {}'.format(stats['skipped_folders']['already_exists']))
     print()
-    print('Skipped mails     : {}'.format(sum([stats['skipped_mails'][c] for c in stats['skipped_mails']])))
-    print('├─ Zero sized     : {}'.format(stats['skipped_mails']['zero_size']))
-    print('├─ To large       : {} (max-mail-size mode only)'.format(stats['skipped_mails']['max_size']))
-    print('├─ No envelope    : {}'.format(stats['skipped_mails']['no_envelope']))
-    print('├─ Line length    : {} (max-line-length mode only)'.format(stats['skipped_mails']['max_line_length']))
-    print('└─ Already exists : {} (incremental mode only)'.format(stats['skipped_mails']['already_exists']))
+    print('Skipped mails       : {}'.format(sum([stats['skipped_mails'][c] for c in stats['skipped_mails']])))
+    print('├─ Zero sized       : {}'.format(stats['skipped_mails']['zero_size']))
+    print('├─ To large         : {} (max-mail-size mode only)'.format(stats['skipped_mails']['max_size']))
+    print('├─ No envelope      : {}'.format(stats['skipped_mails']['no_envelope']))
+    print('├─ Line length      : {} (max-line-length mode only)'.format(stats['skipped_mails']['max_line_length']))
+    print('└─ Already exists   : {} (incremental mode only)'.format(stats['skipped_mails']['already_exists']))
 
     print('\nErrors ({}):'.format(len(stats['errors'])))
     if stats['errors']:
