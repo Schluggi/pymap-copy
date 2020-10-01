@@ -69,6 +69,17 @@ def connect(server, port, encryption):
         return None, conn_status
 
 
+def login(connection, user, password):
+    if connection:
+        try:
+            connection.login(user, password)
+            return True, colorize('OK', color='green')
+        except Exception as e:
+            return False, '{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e))
+    else:
+        return False, '{} No active connection'.format(colorize('Error:', color='red', bold=True))
+
+
 parser = ArgumentParser(description='', epilog='pymap-copy by Schluggi')
 
 #: run mode arguments
@@ -185,33 +196,22 @@ print(status)
 
 print()
 
-try:
-    #: Login source
-    print('Login source                : {}, '.format(args.source_user), end='', flush=True)
-    source.login(args.source_user, args.source_pass)
-    print(colorize('OK', color='green'))
-except (exceptions.LoginError, IMAP4.error) as e:
-    error = True
-    print('{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e)))
+
+#: Login source
+print('Login source                : {}, '.format(args.source_user), end='', flush=True)
+source_login_ok, status = login(source, args.source_user, args.source_pass)
+print(status)
+
+#: Login destination
+print('Login destination           : {}, '.format(args.destination_user), end='', flush=True)
+destination_login_ok, status = login(destination, args.destination_user, args.destination_pass)
+print(status)
+
+if all((source_login_ok, destination_login_ok)) is False:
+    print('\nAbort! Please fix the errors above.')
+    exit()
 
 
-def login_to_destination(destination, args):
-    error = False
-    try:
-        #: Login destination
-        print('Login destination           : {}, '.format(args.destination_user), end='', flush=True)
-        destination.login(args.destination_user, args.destination_pass)
-        print(colorize('OK', color='green'))
-    except (exceptions.LoginError, IMAP4.error) as e:
-        error = True
-        print('{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e)))
-
-    if error:
-        print('\nAbort!')
-        exit()
-
-
-login_to_destination(destination, args)
 print()
 
 #: get quota from source
