@@ -22,6 +22,7 @@ parser.add_argument('--ignore-quota', help='ignores insufficient quota', action=
 parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like Drafts, '
                                                   'Trash, etc.)', action='store_true')
 parser.add_argument('--max-line-length', help='use this option when the program crashes by some mails', type=int)
+parser.add_argument('--max-mail-size', help='skip all mails larger than the given size in byte', type=int)
 parser.add_argument('--no-colors', help='disable ANSI Escape Code (for terminals like powershell or cmd)',
                     action="store_true")
 parser.add_argument('--skip-empty-folders', help='skip empty folders', action='store_true')
@@ -102,6 +103,7 @@ stats = {
     'skipped_mails': {
         'already_exists': 0,
         'zero_size': 0,
+        'max_size': 0,
         'max_line_length': 0,
         'no_envelope': 0
     },
@@ -542,11 +544,19 @@ try:
                     progress, buffer_counter+1, len(db['source']['folders'][sf_name]['buffer']), i+1, len(buffer),
                     beautysized(size), date, subject), clear=True), end='')
 
+                #: skip empty mails / zero sized
                 if size == 0:
                     stats['skipped_mails']['zero_size'] += 1
                     stats['processed'] += 1
                     print('\n{} \n'.format(colorize('Skipped! (zero sized)', color='cyan')), end='')
 
+                #: skip to large mails
+                elif size > args.max_mail_size:
+                    stats['skipped_mails']['max_size'] += 1
+                    stats['processed'] += 1
+                    print('\n{} \n'.format(colorize('Skipped! (to large)', color='cyan')), end='')
+
+                #: skip mails that already exist
                 elif args.incremental and df_name in db['destination']['folders'] and \
                         msg_id in [m['msg_id'] for m in db['destination']['folders'][df_name]['mails'].values()]:
                     stats['skipped_mails']['already_exists'] += 1
@@ -639,6 +649,7 @@ else:
     print()
     print('Skipped mails     : {}'.format(sum([stats['skipped_mails'][c] for c in stats['skipped_mails']])))
     print('├─ Zero sized     : {}'.format(stats['skipped_mails']['zero_size']))
+    print('├─ To large       : {} (max-mail-size mode only)'.format(stats['skipped_mails']['max_size']))
     print('├─ No envelope    : {}'.format(stats['skipped_mails']['no_envelope']))
     print('├─ Line length    : {} (max-line-length mode only)'.format(stats['skipped_mails']['max_line_length']))
     print('└─ Already exists : {} (incremental mode only)'.format(stats['skipped_mails']['already_exists']))
