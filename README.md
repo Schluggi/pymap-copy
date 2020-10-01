@@ -99,7 +99,7 @@ skip all mails with lines more than 4096 characters.
 
 You got `broken pipe`? This is also an Exchange *feature*. There is a limit of failures (by default three) in 
 a single connection. Once you reach the limit, the server will disconnect you and pymap-copy will show an error for 
-each further mail. Mostly these error occurs because the size of the mail is to larger than the max allowed size. The
+each further mail. Mostly these error occurs because the size of the mail is larger than the max allowed size. The
 best way is to increase the limit (you need admin access to the server) by following
 [these instructions](https://docs.microsoft.com/en-us/exchange/mail-flow/message-size-limits?view=exchserver-2019).
 You can also exclude these mails from copy by using the `--max-mail-size` argument.

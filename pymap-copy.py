@@ -551,11 +551,11 @@ try:
                     stats['processed'] += 1
                     print('\n{} \n'.format(colorize('Skipped! (zero sized)', color='cyan')), end='')
 
-                #: skip to large mails
+                #: skip too large mails
                 elif size > args.max_mail_size:
                     stats['skipped_mails']['max_size'] += 1
                     stats['processed'] += 1
-                    print('\n{} \n'.format(colorize('Skipped! (to large)', color='cyan')), end='')
+                    print('\n{} \n'.format(colorize('Skipped! (too large)', color='cyan')), end='')
 
                 #: skip mails that already exist
                 elif args.incremental and df_name in db['destination']['folders'] and \
