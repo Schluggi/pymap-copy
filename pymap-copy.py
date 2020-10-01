@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from imaplib import IMAP4
 from time import time
 
@@ -7,60 +7,18 @@ from imapclient import IMAPClient, exceptions
 
 from utils import decode_mime, beautysized, imaperror_decode
 
-parser = ArgumentParser(description='', epilog='pymap-copy by Schluggi')
-parser.add_argument('-b', '--buffer-size', help='the number of mails loaded with a single query (default: 50)',
-                    nargs='?', type=int, default=50)
-parser.add_argument('-d', '--dry-run', help='copy/creating nothing, just feign', action="store_true")
-parser.add_argument('-l', '--list', help='copy/creating nothing, just listing folders', action="store_true")
-parser.add_argument('-i', '--incremental', help='copy/creating only new folders/mails', action="store_true")
-parser.add_argument('--abort-on-error', help='the process will interrupt at the first mail transfer error',
-                    action="store_true")
-parser.add_argument('--denied-flags', help='mails with this flags will be skipped', type=str)
-parser.add_argument('-r', '--redirect', help='redirect a folder (source:destination --denied-flags seen,recent -d)',
-                    action='append')
-parser.add_argument('--ignore-quota', help='ignores insufficient quota', action='store_true')
-parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like Drafts, '
-                                                  'Trash, etc.)', action='store_true')
-parser.add_argument('--max-line-length', help='use this option when the program crashes by some mails', type=int)
-parser.add_argument('--max-mail-size', help='skip all mails larger than the given size in byte', type=int)
-parser.add_argument('--no-colors', help='disable ANSI Escape Code (for terminals like powershell or cmd)',
-                    action="store_true")
-parser.add_argument('--skip-empty-folders', help='skip empty folders', action='store_true')
-parser.add_argument('--skip-ssl-verification', help='do not verify any ssl certificate', action='store_true')
-parser.add_argument('-u', '--source-user', help='source mailbox username', nargs='?', required=True)
-parser.add_argument('-p', '--source-pass', help='source mailbox password', nargs='?', required=True)
-parser.add_argument('-s', '--source-server', help='hostname or  of the source IMAP-server', nargs='?', required=True,
-                    default=False)
-parser.add_argument('--source-no-ssl', help='use this option if the destination server does not support TLS/SSL',
-                    action="store_true")
-parser.add_argument('--source-use-starttls',
-                    help='use this option when connecting to an optional tls port (143) but require starttls',
-                    action="store_true", default=False)
-parser.add_argument('--source-port', help='the IMAP port of the source server (default: 993)', nargs='?',
-                    default=993, type=int)
-parser.add_argument('--source-root', help='defines the source root (case sensitive)', nargs='?', default='', type=str)
-parser.add_argument('-U', '--destination-user', help='destination mailbox username', nargs='?', required=True)
-parser.add_argument('-P', '--destination-pass', help='destination mailbox password', nargs='?', required=True)
-parser.add_argument('-S', '--destination-server', help='hostname or IP of the destination server', nargs='?',
-                    required=True)
-parser.add_argument('--destination-no-ssl', help='use this option if the destination server does not support TLS/SSL',
-                    action="store_true", default=False)
-parser.add_argument('--destination-use-starttls',
-                    help='use this option when connecting to an optional tls port (143) but require starttls',
-                    action="store_true", default=False)
-parser.add_argument('--destination-port', help='the IMAP port of the destination server (default: 993)', nargs='?',
-                    default=993, type=int)
-parser.add_argument('--source-mailbox', help='if specified, only sync this folder (case sensitive). Can be repeated '
-                    'multiple times to source multiple mailboxes.', action='append', nargs='?', default=list(),
-                    type=str)
-parser.add_argument('--destination-root', help='defines the destination root (case sensitive)', nargs='?', default='',
-                    type=str)
-parser.add_argument('--destination-root-merge', help='ignores the destination root if the folder is already part of it',
-                    action='store_true')
-parser.add_argument('--destination-no-subscribe', help='all copied folders will be not are not subscribed',
-                    action="store_true", default=False)
 
-args = parser.parse_args()
+def check_encryption(value):
+    value = value.lower()
+    if value not in ['ssl', 'tls', 'starttls', 'none']:
+        raise ArgumentTypeError('{} is an unknown encryption. Use can use ssl, tls, starttls or none instead.')
+    return value
+
+
+def default_port(encryption):
+    if encryption in ['starttls', 'none']:
+        return 143
+    return 993
 
 
 def colorize(s, color=None, bold=False, clear=False):
@@ -79,9 +37,105 @@ def colorize(s, color=None, bold=False, clear=False):
     return '{}\x1b[0m'.format(s)
 
 
+def connect(server, port, encryption):
+    use_ssl = False
+    ssl_context = None  # IMAPClient will use a context by default if ssl_context is None
+
+    if encryption in ['tls', 'ssl']:
+        use_ssl = True
+
+    if args.ssl_no_verify:
+        import ssl
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
+    try:
+        conn = IMAPClient(host=server, port=port, ssl=use_ssl, ssl_context=ssl_context)
+        if encryption == 'starttls':
+            conn.starttls(ssl_context=ssl_context)
+            conn_status = '{} ({})'.format(colorize('OK', color='green'), colorize('STARTTLS', color='green'))
+
+        elif encryption in ['ssl', 'tls']:
+            conn_status = '{} ({})'.format(colorize('OK', color='green'), colorize('SSL/TLS', color='green'))
+
+        else:
+            conn_status = '{} ({})'.format(colorize('OK', color='green'), colorize('NOT ENCRYPTED', color='red'))
+
+        return conn, conn_status
+
+    except Exception as e:
+        conn_status = '{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e))
+        return None, conn_status
+
+
+parser = ArgumentParser(description='', epilog='pymap-copy by Schluggi')
+
+#: run mode arguments
+parser.add_argument('-d', '--dry-run', help='copy & creating nothing, just feign', action="store_true")
+parser.add_argument('-l', '--list', help='copy & creating nothing, just list folders', action="store_true")
+parser.add_argument('-i', '--incremental', help='copy & creating only new folders/mails', action="store_true")
+
+#: special and optimization arguments
+parser.add_argument('--abort-on-error', help='the process will interrupt at the first mail transfer error',
+                    action="store_true")
+parser.add_argument('-b', '--buffer-size', help='the number of mails loaded with a single query (default: 50)',
+                    nargs='?', type=int, default=50)
+parser.add_argument('--denied-flags', help='mails with this flags will be skipped', type=str)
+parser.add_argument('-r', '--redirect', help='redirect a folder (source:destination --denied-flags seen,recent -d)',
+                    action='append')
+parser.add_argument('--ignore-quota', help='ignores insufficient quota', action='store_true')
+parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like Drafts, '
+                                                  'Trash, etc.)', action='store_true')
+parser.add_argument('--max-line-length', help='use this option when the program crashes by some mails', type=int)
+parser.add_argument('--max-mail-size', help='skip all mails larger than the given size in byte', type=int)
+parser.add_argument('--no-colors', help='disable ANSI Escape Code (for terminals like powershell or cmd)',
+                    action="store_true")
+parser.add_argument('--skip-empty-folders', help='skip empty folders', action='store_true')
+parser.add_argument('--ssl-no-verify', help='do not verify any ssl certificate', action='store_true')
+
+#: source arguments
+parser.add_argument('-u', '--source-user', help='source mailbox username', nargs='?', required=True)
+parser.add_argument('-p', '--source-pass', help='source mailbox password', nargs='?', required=True)
+parser.add_argument('-s', '--source-server', help='hostname or  of the source IMAP-server', nargs='?', required=True,
+                    default=False)
+parser.add_argument('-e', '--source-encryption', help='select the source encryption (ssl/tls/starttls/none) '
+                                                      '(default: ssl)', default='ssl', type=check_encryption)
+parser.add_argument('--source-port', help='the IMAP port of the source server (default: 993)', nargs='?', default=993,
+                    type=int)
+parser.add_argument('--source-root', help='defines the source root (case sensitive)', nargs='?', default='', type=str)
+parser.add_argument('--source-mailbox', help='if specified, only sync this folder (case sensitive). Can be repeated '
+                    'multiple times to source multiple mailboxes.', action='append', nargs='?', default=list(),
+                    type=str)
+
+#: destination arguments
+parser.add_argument('-U', '--destination-user', help='destination mailbox username', nargs='?', required=True)
+parser.add_argument('-P', '--destination-pass', help='destination mailbox password', nargs='?', required=True)
+parser.add_argument('-S', '--destination-server', help='hostname or IP of the destination server', nargs='?',
+                    required=True)
+parser.add_argument('-E', '--destination-encryption', help='select the destination encryption (ssl/tls/starttls/none) '
+                                                           '(default: ssl)', default='ssl', type=check_encryption)
+parser.add_argument('--destination-port', help='the IMAP port of the destination server', nargs='?', default=993,
+                    type=int)
+parser.add_argument('--destination-root', help='defines the destination root (case sensitive)', nargs='?', default='',
+                    type=str)
+parser.add_argument('--destination-root-merge', help='ignores the destination root if the folder is already part of it',
+                    action='store_true')
+parser.add_argument('--destination-no-subscribe', help='all copied folders will be not are not subscribed',
+                    action="store_true", default=False)
+
+args = parser.parse_args()
+
+
+if 'source-port' not in args:
+    args.source_port = default_port(args.source_encryption)
+
+if 'destination-port' not in args:
+    args.destination_port = default_port(args.destination_encryption)
+
+
 SPECIAL_FOLDER_FLAGS = [b'\\Archive', b'\\Junk', b'\\Drafts', b'\\Trash', b'\\Sent']
 denied_flags = [b'\\recent']
-ssl_context = None
 error = False
 progress = 0
 destination_delimiter, source_delimiter = None, None
@@ -114,74 +168,21 @@ stats = {
 if args.denied_flags:
     denied_flags.extend(['\\{}'.format(flag).encode() for flag in args.denied_flags.lower().split(',')])
 
-if args.skip_ssl_verification:
-    import ssl
-    ssl_context = ssl.create_default_context()
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = ssl.CERT_NONE
 
-try:
-    print('\nConnecting source           : {}, '.format(args.source_server), end='', flush=True)
+print()
 
-    #: if we are using starttls, then we must connect without an SSL'd connection
-    if args.source_use_starttls:
-        use_ssl = False
-    else:
-        use_ssl = not args.source_no_ssl
+#: connecting source
+print('Connecting source           : {}:{}, '.format(args.source_server, args.source_port),
+      end='', flush=True)
+source, status = connect(args.source_server, args.source_port, args.source_encryption)
+print(status)
 
-    source = IMAPClient(host=args.source_server, port=args.source_port, ssl=use_ssl, ssl_context=ssl_context)
+#: connecting destination
+print('Connecting destination      : {}:{}, '.format(args.destination_server, args.destination_port),
+      end='', flush=True)
+destination, status = connect(args.destination_server, args.destination_port, args.destination_encryption)
+print(status)
 
-    if args.source_use_starttls:
-        source.starttls(ssl_context=ssl_context)
-        print('{} ({})'.format(colorize('OK ', color='green'), colorize('STARTTLS)', color='green')))
-
-    elif not args.source_use_starttls and not use_ssl:
-        print('{} ({})'.format(colorize('OK ', color='green'), colorize('NOT ENCRYPTED', color='red')))
-            
-    else:  # default is ssl
-        print('{} ({})'.format(colorize('OK ', color='green'), colorize('SSL/TLS)', color='green')))
-
-except Exception as e:
-    print('{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e)))
-    error = True
-
-
-def connect_to_destination(args):
-    error = False
-    try:
-        print('Connecting destination      : {}, '.format(args.destination_server), end='', flush=True)
-
-        # if we are using starttls, then we must connect without an SSL'd connection
-        if args.destination_use_starttls:
-            use_ssl = False
-        else:
-            use_ssl = not args.destination_no_ssl
-
-        destination = IMAPClient(host=args.destination_server, port=args.destination_port, ssl=use_ssl,
-                                 ssl_context=ssl_context)
-
-        if args.destination_use_starttls:
-            destination.starttls(ssl_context=ssl_context)
-            print('{} ({})'.format(colorize('OK ', color='green'), colorize('STARTTLS', color='green')))
-
-        elif not args.destination_use_starttls and not use_ssl:
-            print('{} ({})'.format(colorize('OK ', color='green'), colorize('NOT ENCRYPTED', color='red')))
-
-        else:  # default is ssl
-            print('{} ({})'.format(colorize('OK ', color='green'), colorize('SSL/TLS', color='green')))
-
-    except Exception as e:
-        print('{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e)))
-        error = True
-
-    if error:
-        print('\nAbort!')
-        exit()
-
-    return destination
-
-
-destination = connect_to_destination(args)
 print()
 
 try:
