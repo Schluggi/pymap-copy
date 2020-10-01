@@ -23,7 +23,8 @@ def default_port(encryption):
 def colorize(s, color=None, bold=False, clear=False):
     colors = {'red': '\x1b[31m',
               'green': '\x1b[32m',
-              'cyan': '\x1b[36m'}
+              'cyan': '\x1b[36m',
+              'yellow': '\x1b[33m'}
     if args.no_colors:
         return s
 
@@ -59,7 +60,7 @@ def connect(server, port, encryption):
             conn_status = '{} ({})'.format(colorize('OK', color='green'), colorize('SSL/TLS', color='green'))
 
         else:
-            conn_status = '{} ({})'.format(colorize('OK', color='green'), colorize('NOT ENCRYPTED', color='red'))
+            conn_status = '{} ({})'.format(colorize('OK', color='green'), colorize('NOT ENCRYPTED', color='yellow'))
 
         return conn, conn_status
 
