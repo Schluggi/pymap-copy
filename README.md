@@ -43,12 +43,12 @@ If you just want to look what would happen append `-d`/`--dry-run`.
 
 ### Redirections and destination root
 #### Redirections
-You want to merge `INBOX.Send Items` with the `INBOX.Send` folder? You can do this with `-r/--redirect`.
+You want to merge `INBOX.Send Items` with the `INBOX.Send` folder? You can do this with `-r`/`--redirect`.
 The syntax of this argument is simple `source:destination`. For this example you can use 
 `-r "INBOX.Send Items:INBOX.Send"` to put all mails from the source folder `INBOX.Send Items` the to destination folder 
 `INBOX.Send`. Please make sure you use quotation marks if one of the folders includes a special character or space like 
 as in this example. In addition, the folder names must be case-sensitive with the correct delimiter. Do a dry run 
-(`-d/--dry-run`) to check that everything will redirect correctly. 
+(`-d`/`--dry-run`) to check that everything will redirect correctly. 
 
 #### Destination root
 In some cases it's necessary to copy all mails from source into an import folder on destination. In this case you can 
@@ -77,7 +77,7 @@ Current folder: INBOX.Folder1 (4 mails, 7.2 MB) -> INBOX.INBOX.Folder1 (non exis
 Current folder: Trash.Folder1 (22 mails, 1.1 MB) -> INBOX.Trash.Folder1 (non existing)
 ```
 
-As always: Do a dry run (`-d/--dry-run`) to ensure that everything is going well. 
+As always: Do a dry run (`-d`/`--dry-run`) to ensure that everything is going well. 
 
 
 ### Performance optimization
@@ -86,13 +86,22 @@ If you know the source mailbox has a lot of small mails use a higher size. In th
 to counter timeouts. For bad internet connections you also should use a lower sized buffer.
 
 #### Use of source-mailbox argument
-As a further optimization you can target specific mailboxes you want to sync to the destination (versus the default of everything).  Use `--source-mailbox <NAME>` to only sync that one mailbox. The flag can be specified multiple times to indicate multiple mailboxes to sync. The flag is NOT recursive and will only sync the contents of the folder.
+As a further optimization you can target specific mailboxes you want to sync to the destination (versus the default of 
+everything).  Use `--source-mailbox <NAME>` to only sync that one mailbox. The flag can be specified multiple times to 
+indicate multiple mailboxes to sync. The flag is NOT recursive and will only sync the contents of the folder.
 
 ## Microsoft Exchange Server IMAP bug 
-If your destination is an Exchange Server (EX) you'll properly get an `bad command` exception while coping some mails. 
-This happens because the EX analyse (and in some cases modify) new mails. There is a bug in this lookup process (since 
-EX version 5 -.-). To prevent an exception you can use the argument `--max-line-length 4096`. This will skip all mails 
-with lines more than 4096 characters.
+If your destination is an Microsoft Exchange Server (EX) you'll properly get an `bad command` exception while coping 
+some mails. This happens because the EX analyse (and in some cases modify) new mails. There is a bug in this lookup
+process (since EX version 5 -.-). To prevent an exception you can use the argument `--max-line-length 4096`. This will 
+skip all mails with lines more than 4096 characters.
+
+You got `broken pipe`? This is also an Exchange *feature*. There is a limit of failures (by default three) in 
+a single connection. Once you reach the limit, the server will disconnect you and pymap-copy will show an error for 
+each further mail. Mostly these error occurs because the size of the mail is to larger than the max allowed size. The
+best way is to increase the limit (you need admin access to the server) by following
+[these instructions](https://docs.microsoft.com/en-us/exchange/mail-flow/message-size-limits?view=exchserver-2019).
+You can also exclude these mails from copy by using the `--max-mail-size` argument.
 
 ## Credits 
 Created and maintained by Schluggi.
