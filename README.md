@@ -8,7 +8,7 @@ SSL/TLS and STARTTLS support i wrote my own python-based version. I hope you lik
 ## Features
 - Copies folders and subfolders
 - Copies mails even with flags (seen, answered, ...)
-- Connecting via SSL/TLS (by default), or optionally use STARTTLS
+- Connecting via SSL/TLS (by default), STARTTLS or without encryption
 - Supports incremental copy (copies only new mails/folders)
 - User specific redirections (with wildcard support)
 - Auto subscribe new folders (by default)
@@ -16,6 +16,7 @@ SSL/TLS and STARTTLS support i wrote my own python-based version. I hope you lik
 - Quota checking (by default)
 - Over all progress bar
 - Uses buffer for max performance
+- Optimized for large mailboxes
 - Workaround for Microsoft Exchange Server's IMAP bug 
 - Statistics
 - Simple usage
@@ -103,5 +104,23 @@ best way is to increase the limit (you need admin access to the server) by follo
 [these instructions](https://docs.microsoft.com/en-us/exchange/mail-flow/message-size-limits?view=exchserver-2019).
 You can also exclude these mails from copy by using the `--max-mail-size` argument.
 
+
+## Encryption & Ports
+By default pymap-copy will use port 993 with ssl/tls. 
+You can change this behavior by using `--source-encryption`/`--destination-encryption` and 
+`--source-port`/`--destination-port`. If no port is specified, it will choose the default port based on given 
+encryption.
+
+Possible encryption are `tls`, `ssl` (the same as `tls`), `none` and `starttls`.
+
+**Default ports**
+| Encryption | Port | 
+| - | - |
+| `tls` | 993 |
+| `ssl` | 993 |
+| `starttls` | 143 |
+| `none` | 143 | 
+
+  
 ## Credits 
 Created and maintained by Schluggi.
