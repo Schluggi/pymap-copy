@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser, ArgumentTypeError
-from imaplib import IMAP4
 from time import time
 
 from imapclient import IMAPClient, exceptions
@@ -295,7 +294,19 @@ for flags, delimiter, name in source.list_folders(args.source_root):
                            format(stats['source_mails'], name), clear=True), flush=True, end='')
             continue
 
-    source.select_folder(name, readonly=True)
+    try:
+        source.select_folder(name, readonly=True)
+    except Exception as e:
+        error_information = {'size': 'unknown',
+                             'subject': 'unknown',
+                             'exception': str(e),
+                             'folder': name,
+                             'date': 'unknown',
+                             'id': 'unknown'}
+
+        stats['errors'].append(error_information)
+        continue
+
     mails = source.search()
 
     if not mails and args.skip_empty_folders:
