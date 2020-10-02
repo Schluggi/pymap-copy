@@ -153,9 +153,14 @@ SPECIAL_FOLDER_FLAGS = [b'\\Archive', b'\\Junk', b'\\Drafts', b'\\Trash', b'\\Se
 denied_flags = [b'\\recent']
 progress = 0
 destination_delimiter, source_delimiter = None, None
-db = {'source': {'folders': {}},
-      'destination': {'folders': {}}
-      }
+db = {
+    'source': {
+        'folders': {}
+    },
+    'destination': {
+        'folders': {}
+    }
+}
 stats = {
     'start_time': time(),
     'source_mails': 0,
