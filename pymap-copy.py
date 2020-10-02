@@ -51,28 +51,28 @@ def connect(server, port, encryption):
         ssl_context.verify_mode = ssl.CERT_NONE
 
     try:
-        conn = IMAPClient(host=server, port=port, ssl=use_ssl, ssl_context=ssl_context)
+        client = IMAPClient(host=server, port=port, ssl=use_ssl, ssl_context=ssl_context)
         if encryption == 'starttls':
-            conn.starttls(ssl_context=ssl_context)
-            conn_status = '{} ({})'.format(colorize('OK', color='green'), colorize('STARTTLS', color='green'))
+            client.starttls(ssl_context=ssl_context)
+            client_status = '{} ({})'.format(colorize('OK', color='green'), colorize('STARTTLS', color='green'))
 
         elif encryption in ['ssl', 'tls']:
-            conn_status = '{} ({})'.format(colorize('OK', color='green'), colorize('SSL/TLS', color='green'))
+            client_status = '{} ({})'.format(colorize('OK', color='green'), colorize('SSL/TLS', color='green'))
 
         else:
-            conn_status = '{} ({})'.format(colorize('OK', color='green'), colorize('NOT ENCRYPTED', color='yellow'))
+            client_status = '{} ({})'.format(colorize('OK', color='green'), colorize('NOT ENCRYPTED', color='yellow'))
 
-        return conn, conn_status
+        return client, client_status
 
     except Exception as e:
-        conn_status = '{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e))
-        return None, conn_status
+        client_status = '{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e))
+        return None, client_status
 
 
-def login(connection, user, password):
-    if connection:
+def login(client, user, password):
+    if client:
         try:
-            connection.login(user, password)
+            client.login(user, password)
             return True, colorize('OK', color='green')
         except Exception as e:
             return False, '{} {}'.format(colorize('Error:', color='red', bold=True), imaperror_decode(e))
@@ -258,27 +258,6 @@ else:
 print()
 
 
-def start_imap_idle(client):
-    #: must select a folder before invoking idle. we simply select the first folder to idle on
-    _, _, some_folder = client.list_folders()[0]
-    client.select_folder(some_folder, readonly=True)
-    client.idle()
-
-
-def end_imap_idle(client):
-    """
-    Rather simple: stop idle mode to allow normal commands
-    """
-    client.idle_done()
-
-
-def restart_imap_idle(client):
-    """
-    Restart the idle session so we don't timeout. intended to be invoked by long running code where needed to keep the
-    connection alive
-    """
-    end_imap_idle(client)
-    start_imap_idle(client)
 
 
 start_imap_idle(destination)
@@ -411,8 +390,8 @@ if args.list:
         print('{} ({} mails, {})'.format(name, len(db['destination']['folders'][name]['mails']),
                                          beautysized(db['destination']['folders'][name]['size'])))
 
-    if args.source_mailbox:
-        print('\n{}'.format(colorize('Everything skipped! (list mode, list was filtered by the source mailbox argument)',
+    if any((args.source_mailbox, args.destination_root, args.source_root)):
+        print('\n{}'.format(colorize('Everything skipped! (list mode, list was filtered by some arguments)',
                                      color='cyan')))
     else:
         print('\n{}'.format(colorize('Everything skipped! (list mode)', color='cyan')))
