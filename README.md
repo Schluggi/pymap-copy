@@ -96,10 +96,26 @@ servers can hold this idle mode for 30 minutes. The idle mode restarts every 28 
 be no timeout. If a timeout occurs nevertheless you can change the restart interval by using `--idle-interval` followed
 by the desired number of seconds.
 
-#### Use of source-mailbox argument
-As a further optimization you can target specific mailboxes you want to sync to the destination (versus the default of 
-everything).  Use `--source-mailbox <NAME>` to only sync that one mailbox. The flag can be specified multiple times to 
-indicate multiple mailboxes to sync. The flag is NOT recursive and will only sync the contents of the folder.
+#### Use of source-folder argument
+As a further optimization you can target specific folders you want to copy to the destination (versus the default of 
+everything). Use `-f` / `--source-folder` to only copy that folder(s). The flag can be specified multiple times to
+indicate multiple folders to copy. The argument does support wildcard by using `*` and the end.
+
+##### Copy only `INBOX`:
+```
+--source-folder INBOX 
+```
+
+##### Copy `INBOX.Archives` and all subfolders:
+```
+--source-folder INBOX.Archives.* --source-folder INBOX.Archives
+```
+
+You can also use this argument but please notice, that all folders started with `INBOX.Archives` (like 
+`INBOX.Archives123` and `INBOX.ArchivesNew`) will be copied too (if they exists).
+```
+--source-folder INBOX.Archives*
+``` 
 
 ## Microsoft Exchange Server IMAP bug 
 If your destination is an Microsoft Exchange Server (EX) you'll properly get an `bad command` exception while coping 
