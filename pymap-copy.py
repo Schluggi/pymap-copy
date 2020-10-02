@@ -118,10 +118,7 @@ parser.add_argument('-e', '--source-encryption', help='select the source encrypt
                                                       '(default: ssl)', default='ssl', type=check_encryption)
 parser.add_argument('--source-port', help='the IMAP port of the source server (default: 993)', nargs='?', default=993,
                     type=int)
-parser.add_argument('--source-root', help='defines the source root (case sensitive)', nargs='?', default='', type=str)
-parser.add_argument('--source-mailbox', help='if specified, only sync this folder (case sensitive). Can be repeated '
-                    'multiple times to source multiple mailboxes.', action='append', nargs='?', default=list(),
-                    type=str)
+parser.add_argument('-f', '--source-folder', help='', action='append', nargs='?', default=[], type=str)
 
 #: destination arguments
 parser.add_argument('-U', '--destination-user', help='destination mailbox username', nargs='?', required=True)
@@ -171,7 +168,6 @@ stats = {
         'already_exists': 0,
         'empty': 0,
         'dry-run': 0,
-        'by_mailbox': 0,
         'no_parent': 0
     },
     'skipped_mails': {
@@ -274,16 +270,16 @@ else:
 print()
 
 destination_idle.start_idle()
+wildcards = tuple([f[:-1] for f in args.source_folder if f.endswith('*')])
 
 #: get source folders
 print(colorize('Getting source folders      : loading (this can take a while)', clear=True), flush=True, end='')
-for flags, delimiter, name in source.list_folders(args.source_root):
-
+for flags, delimiter, name in source.list_folders():
     if not source_delimiter:
         source_delimiter = delimiter.decode()
 
-    if args.source_mailbox:
-        if name not in args.source_mailbox:
+    if args.source_folder:
+        if name not in args.source_folder and name.startswith(wildcards) is False:
             print(colorize('Getting source folders      : Progressing ({} mails) (skipping): {}'.
                            format(stats['source_mails'], name), clear=True), flush=True, end='')
             continue
@@ -335,10 +331,12 @@ for flags, delimiter, name in source.list_folders(args.source_root):
 
         del mails[:args.buffer_size]
 
-print(colorize('Getting source folders      : {} mails in {} folders ({})'.
+print(colorize('Getting source folders      : {} mails in {} folders ({}) '.
                format(stats['source_mails'], len(db['source']['folders']),
-                      beautysized(sum([f['size'] for f in db['source']['folders'].values()]))), clear=True))
-
+                      beautysized(sum([f['size'] for f in db['source']['folders'].values()]))), clear=True), end='')
+if any((args.source_folder, args.destination_root)):
+    print('({})'.format(colorize('filtered by arguments', color='yellow')), end='')
+print()
 
 destination_idle.stop_idle()
 source_idle.start_idle()
@@ -352,11 +350,10 @@ for flags, delimiter, name in destination.list_folders(args.destination_root):
         destination_delimiter = delimiter.decode()
 
     #: no need to process the source destination mailbox if we skipped the source for it
-    if args.source_mailbox:
-        if name.replace(destination_delimiter, source_delimiter) not in args.source_mailbox:
-            print(colorize('Getting destination folders : Progressing ({} mails) (skipping): {}'.
-                           format(stats['destination_mails'], name), clear=True), flush=True, end='')
-            stats['skipped_folders']['by_mailbox'] += 1
+    if args.source_folder:
+        if name not in args.source_folder and name.startswith(wildcards) is False:
+            print(colorize('Getting source folders      : Progressing ({} mails) (skipping): {}'.
+                           format(stats['source_mails'], name), clear=True), flush=True, end='')
             continue
 
     db['destination']['folders'][name] = {'flags': flags, 'mails': {}, 'size': 0}
@@ -382,9 +379,13 @@ for flags, delimiter, name in destination.list_folders(args.destination_root):
         del mails[:args.buffer_size]
 
 
-print(colorize('Getting destination folders : {} mails in {} folders ({})\n'.
+print(colorize('Getting destination folders : {} mails in {} folders ({}) '.
                format(stats['destination_mails'], len(db['destination']['folders']),
-                      beautysized(sum([f['size'] for f in db['destination']['folders'].values()]))), clear=True))
+                      beautysized(sum([f['size'] for f in db['destination']['folders'].values()]))),
+               clear=True), end='')
+if any((args.source_folder, args.destination_root)):
+    print('({})'.format(colorize('filtered by arguments', color='yellow')), end='')
+print('\n')
 
 #: list mode
 if args.list:
@@ -398,11 +399,8 @@ if args.list:
         print('{} ({} mails, {})'.format(name, len(db['destination']['folders'][name]['mails']),
                                          beautysized(db['destination']['folders'][name]['size'])))
 
-    if any((args.source_mailbox, args.destination_root, args.source_root)):
-        print('\n{}'.format(colorize('Everything skipped! (list mode, list was filtered by some arguments)',
-                                     color='cyan')))
-    else:
-        print('\n{}'.format(colorize('Everything skipped! (list mode)', color='cyan')))
+    print()
+    print(colorize('Everything skipped! (list mode)', color='cyan'))
 
     #: stop idle threads & exit
     source_idle.exit()
@@ -410,7 +408,7 @@ if args.list:
     exit()
 
 
-#: custom links
+#: redirections
 redirections = {}
 not_found = []
 if args.redirect:
@@ -435,11 +433,11 @@ if args.redirect:
         else:
             redirections[r_source] = r_destination
 
+source_idle.stop_idle()
+
 if not_found:
     print('\n{} Source folder not found: {}\n'.format(colorize('Error:', color='red', bold=True), ', '.join(not_found)))
     exit()
-
-source_idle.stop_idle()
 
 try:
     for sf_name in sorted(db['source']['folders'], key=lambda x: x.lower()):
@@ -657,7 +655,6 @@ if args.dry_run:
 else:
     print('Skipped folders     : {}'.format(sum([stats['skipped_folders'][c] for c in stats['skipped_folders']])))
     print('├─ Empty            : {} (skip-empty-folders mode only)'.format(stats['skipped_folders']['empty']))
-    print('├─ By mailbox       : {} (source-mailbox mode only)'.format(stats['skipped_folders']['by_mailbox']))
     print('├─ No parent folder : {}'.format(stats['skipped_folders']['no_parent']))
     print('└─ Already exists   : {}'.format(stats['skipped_folders']['already_exists']))
     print()
