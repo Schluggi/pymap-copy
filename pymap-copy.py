@@ -150,7 +150,6 @@ if 'destination-port' not in args:
 
 SPECIAL_FOLDER_FLAGS = [b'\\Archive', b'\\Junk', b'\\Drafts', b'\\Trash', b'\\Sent']
 denied_flags = [b'\\recent']
-error = False
 progress = 0
 destination_delimiter, source_delimiter = None, None
 db = {'source': {'folders': {}},
@@ -201,12 +200,12 @@ print(status)
 print()
 
 
-#: Login source
+#: login source
 print('Login source                : {}, '.format(args.source_user), end='', flush=True)
 source_login_ok, status = login(source, args.source_user, args.source_pass)
 print(status)
 
-#: Login destination
+#: login destination
 print('Login destination           : {}, '.format(args.destination_user), end='', flush=True)
 destination_login_ok, status = login(destination, args.destination_user, args.destination_pass)
 print(status)
@@ -632,6 +631,7 @@ try:
 except exceptions.IMAPClientError as e:
     print('ERROR: {}'.format(imaperror_decode(e)))
 
+#: logout destination
 try:
     print('Logout destination...', end='', flush=True)
     destination.logout()
@@ -639,6 +639,8 @@ try:
 except exceptions.IMAPClientError as e:
     print('ERROR: {}'.format(imaperror_decode(e)))
 
+
+#: print statistics
 print('\n\nCopied {} mails and {} folders in {:.2f}s\n'.format(
     colorize('{}/{}'.format(stats['copied_mails'], stats['source_mails']), bold=True),
     colorize('{}/{}'.format(stats['copied_folders'], len(db['source']['folders'])), bold=True),
