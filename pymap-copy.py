@@ -4,6 +4,7 @@ from time import time
 
 from imapclient import IMAPClient, exceptions
 
+from imapidle import IMAPIdle
 from utils import decode_mime, beautysized, imaperror_decode
 
 
@@ -95,6 +96,8 @@ parser.add_argument('-b', '--buffer-size', help='the number of mails loaded with
 parser.add_argument('--denied-flags', help='mails with this flags will be skipped', type=str)
 parser.add_argument('-r', '--redirect', help='redirect a folder (source:destination --denied-flags seen,recent -d)',
                     action='append')
+parser.add_argument('--idle-interval', help='time in defines the interval (in seconds) in which the idle process is '
+                                            'restarted (default: 1680)', type=int, default=1680)
 parser.add_argument('--ignore-quota', help='ignores insufficient quota', action='store_true')
 parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like Drafts, '
                                                   'Trash, etc.)', action='store_true')
@@ -212,7 +215,15 @@ if all((source_login_ok, destination_login_ok)) is False:
     print('\nAbort! Please fix the errors above.')
     exit()
 
+print()
 
+#: starting idle threads
+print('Starting idle threads       : ', end='', flush=True)
+source_idle = IMAPIdle(source, interval=args.idle_interval)
+destination_idle = IMAPIdle(destination, interval=args.idle_interval)
+source_idle.start()
+destination_idle.start()
+print('{} (restarts every {} seconds)'.format(colorize('OK', color='green'), args.idle_interval))
 print()
 
 #: get quota from source
@@ -257,10 +268,7 @@ else:
 
 print()
 
-
-
-
-start_imap_idle(destination)
+destination_idle.start_idle()
 
 #: get source folders
 print(colorize('Getting source folders      : loading (this can take a while)', clear=True), flush=True, end='')
@@ -320,11 +328,6 @@ for flags, delimiter, name in source.list_folders(args.source_root):
             print(colorize('Getting source folders      : Progressing ({} mails): {}'.
                            format(stats['source_mails'], name), clear=True), flush=True, end='')
 
-            # adding a check to refresh our imap idle session on the destination imap connection so we do not
-            # get logged out.  This is possibly too frequently, but just taking a guess here.
-            if stats['source_mails'] % 10000 == 0:
-                restart_imap_idle(destination)
-
         del mails[:args.buffer_size]
 
 print(colorize('Getting source folders      : {} mails in {} folders ({})'.
@@ -332,8 +335,8 @@ print(colorize('Getting source folders      : {} mails in {} folders ({})'.
                       beautysized(sum([f['size'] for f in db['source']['folders'].values()]))), clear=True))
 
 
-end_imap_idle(destination)
-start_imap_idle(source)
+destination_idle.stop_idle()
+source_idle.start_idle()
 
 
 #: get destination folders
@@ -395,6 +398,10 @@ if args.list:
                                      color='cyan')))
     else:
         print('\n{}'.format(colorize('Everything skipped! (list mode)', color='cyan')))
+
+    #: stop idle threads & exit
+    source_idle.exit()
+    destination_idle.exit()
     exit()
 
 
@@ -427,7 +434,7 @@ if not_found:
     print('\n{} Source folder not found: {}\n'.format(colorize('Error:', color='red', bold=True), ', '.join(not_found)))
     exit()
 
-end_imap_idle(source)
+source_idle.stop_idle()
 
 try:
     for sf_name in sorted(db['source']['folders'], key=lambda x: x.lower()):
@@ -613,6 +620,11 @@ else:
         print()
     print('Finish!\n')
 
+#: stop idle threads
+source_idle.exit()
+destination_idle.exit()
+
+#: logout source
 try:
     print('Logout source...', end='', flush=True)
     source.logout()
