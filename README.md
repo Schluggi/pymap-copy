@@ -86,6 +86,12 @@ You could change the buffer size with `-b`/`--buffer-size` to increase the downl
 If you know the source mailbox has a lot of small mails use a higher size. In the case of lager mails use a lower size 
 to counter timeouts. For bad internet connections you also should use a lower sized buffer.
 
+### Preventing timeouts
+To prevent timeouts, both server (the source and destination) will automatically be set into the IMAP idle mode. Most 
+servers can hold this idle mode for 30 minutes. The idle mode restarts every 28 minutes (1680 seconds) so there should 
+be no timeout. If a timeout occurs nevertheless you can change the restart interval by using `--idle-interval` followed
+by the desired number of seconds.
+
 #### Use of source-mailbox argument
 As a further optimization you can target specific mailboxes you want to sync to the destination (versus the default of 
 everything).  Use `--source-mailbox <NAME>` to only sync that one mailbox. The flag can be specified multiple times to 
