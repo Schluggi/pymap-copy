@@ -81,7 +81,8 @@ def login(client, user, password):
         return False, '{} No active connection'.format(colorize('Error:', color='red', bold=True))
 
 
-parser = ArgumentParser(description='', epilog='pymap-copy by Schluggi')
+parser = ArgumentParser(description='Simple python client to copy and transfer IMAP mailboxes ',
+                        epilog='pymap-copy by Schluggi (https://github.com/Schluggi/pymap-copy)')
 
 #: run mode arguments
 parser.add_argument('-d', '--dry-run', help='copy & creating nothing, just feign', action="store_true")
