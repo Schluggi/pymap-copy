@@ -422,7 +422,7 @@ if args.redirect:
             elif r_source not in db['source']['folders']:
                 not_found.append(r_source)
 
-        except ValueError:
+        except ValueError as e:
             print('\n{} Could not parse redirection: "{}"\n'.format(colorize('Error:', color='red', bold=True),
                                                                     imaperror_decode(e), redirection))
             exit()
