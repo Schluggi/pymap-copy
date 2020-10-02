@@ -42,6 +42,10 @@ By running the following command the whole structure (folders & mails) from user
 ```
 If you just want to look what would happen append `-d`/`--dry-run`.
 
+### Incorrect login
+If your password has special characters (like `!`, `$`, `#`, ...) in it, you have to quote them with a backslash (`\`)
+in front. This is a common mistake (#8).
+
 ### Redirections and destination root
 #### Redirections
 You want to merge `INBOX.Send Items` with the `INBOX.Send` folder? You can do this with `-r`/`--redirect`.
