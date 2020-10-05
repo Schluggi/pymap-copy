@@ -117,8 +117,7 @@ parser.add_argument('-s', '--source-server', help='hostname or  of the source IM
                     default=False)
 parser.add_argument('-e', '--source-encryption', help='select the source encryption (ssl/tls/starttls/none) '
                                                       '(default: ssl)', default='ssl', type=check_encryption)
-parser.add_argument('--source-port', help='the IMAP port of the source server (default: 993)', nargs='?', default=993,
-                    type=int)
+parser.add_argument('--source-port', help='the IMAP port of the source server (default: 993)', nargs='?', type=int)
 parser.add_argument('-f', '--source-folder', help='', action='append', nargs='?', default=[], type=str)
 
 #: destination arguments
@@ -128,8 +127,7 @@ parser.add_argument('-S', '--destination-server', help='hostname or IP of the de
                     required=True)
 parser.add_argument('-E', '--destination-encryption', help='select the destination encryption (ssl/tls/starttls/none) '
                                                            '(default: ssl)', default='ssl', type=check_encryption)
-parser.add_argument('--destination-port', help='the IMAP port of the destination server', nargs='?', default=993,
-                    type=int)
+parser.add_argument('--destination-port', help='the IMAP port of the destination server', nargs='?', type=int)
 parser.add_argument('--destination-root', help='defines the destination root (case sensitive)', nargs='?', default='',
                     type=str)
 parser.add_argument('--destination-root-merge', help='ignores the destination root if the folder is already part of it',
@@ -139,12 +137,15 @@ parser.add_argument('--destination-no-subscribe', help='all copied folders will 
 
 args = parser.parse_args()
 
+if args.source_port:
+    source_port = args.source_port
+else:
+    source_port = default_port(args.source_encryption)
 
-if 'source_port' not in args:
-    args.source_port = default_port(args.source_encryption)
-
-if 'destination_port' not in args:
-    args.destination_port = default_port(args.destination_encryption)
+if args.destination_port:
+    destination_port = args.destination_port
+else:
+    destination_port = default_port(args.destination_encryption)
 
 
 SPECIAL_FOLDER_FLAGS = [b'\\Archive', b'\\Junk', b'\\Drafts', b'\\Trash', b'\\Sent']
@@ -189,15 +190,15 @@ if args.denied_flags:
 print()
 
 #: connecting source
-print('Connecting source           : {}:{}, '.format(args.source_server, args.source_port),
+print('Connecting source           : {}:{}, '.format(args.source_server, source_port),
       end='', flush=True)
-source, status = connect(args.source_server, args.source_port, args.source_encryption)
+source, status = connect(args.source_server, source_port, args.source_encryption)
 print(status)
 
 #: connecting destination
-print('Connecting destination      : {}:{}, '.format(args.destination_server, args.destination_port),
+print('Connecting destination      : {}:{}, '.format(args.destination_server, destination_port),
       end='', flush=True)
-destination, status = connect(args.destination_server, args.destination_port, args.destination_encryption)
+destination, status = connect(args.destination_server, destination_port, args.destination_encryption)
 print(status)
 
 print()
