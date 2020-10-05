@@ -11,7 +11,8 @@ from utils import decode_mime, beautysized, imaperror_decode
 def check_encryption(value):
     value = value.lower()
     if value not in ['ssl', 'tls', 'starttls', 'none']:
-        raise ArgumentTypeError('{} is an unknown encryption. Use can use ssl, tls, starttls or none instead.')
+        raise ArgumentTypeError('{} is an unknown encryption. Use can use ssl, tls, starttls or none instead.'.
+                                format(value))
     return value
 
 
@@ -139,10 +140,10 @@ parser.add_argument('--destination-no-subscribe', help='all copied folders will 
 args = parser.parse_args()
 
 
-if 'source-port' not in args:
+if 'source_port' not in args:
     args.source_port = default_port(args.source_encryption)
 
-if 'destination-port' not in args:
+if 'destination_port' not in args:
     args.destination_port = default_port(args.destination_encryption)
 
 
