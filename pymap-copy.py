@@ -231,7 +231,7 @@ print()
 
 #: get quota from source
 print('Getting source quota        : ', end='', flush=True)
-if source.has_capability('QUOTA'):
+if source.has_capability('QUOTA') and args.ignore_quota is False:
     source_quota = source.get_quota()[0]
     print('{}/{} ({:.0f}%)'.format(beautysized(source_quota.usage*1000), beautysized(source_quota.limit*1000),
                                    source_quota.usage / source_quota.limit * 100))
@@ -241,8 +241,7 @@ else:
 
 #: get quota from destination
 print('Getting destination quota   : ', end='', flush=True)
-if destination.has_capability('QUOTA') and not args.ignore_quota:
-    print(destination.get_quota(), flush=True)
+if destination.has_capability('QUOTA') and args.ignore_quota is False:
     destination_quota = destination.get_quota()[0]
     print('{}/{} ({:.0f}%)'.format(beautysized(destination_quota.usage*1000),
                                    beautysized(destination_quota.limit*1000),
