@@ -555,7 +555,7 @@ try:
                     print('\n{} \n'.format(colorize('Skipped! (zero sized)', color='cyan')), end='')
 
                 #: skip too large mails
-                elif size > args.max_mail_size:
+                elif args.max_mail_size and size > args.max_mail_size:
                     stats['skipped_mails']['max_size'] += 1
                     stats['processed'] += 1
                     print('\n{} \n'.format(colorize('Skipped! (too large)', color='cyan')), end='')
