@@ -1,4 +1,11 @@
 #!/usr/bin/python3
+"""
+    Copy and transfer IMAP mailboxes
+"""
+__version__ = '1.0'
+__author__ = 'Lukas Schulte-Tickmann'
+__url__ = 'https://github.com/Schluggi/pymap-copy'
+
 from argparse import ArgumentParser, ArgumentTypeError
 from time import time
 
@@ -82,8 +89,10 @@ def login(client, user, password):
         return False, '{} No active connection'.format(colorize('Error:', color='red', bold=True))
 
 
-parser = ArgumentParser(description='Simple python client to copy and transfer IMAP mailboxes ',
-                        epilog='pymap-copy by Schluggi (https://github.com/Schluggi/pymap-copy)')
+parser = ArgumentParser(description='Copy and transfer IMAP mailboxes',
+                        epilog='pymap-copy by {} ({})'.format(__author__, __url__))
+parser.add_argument('-v', '--version', help='show version and exit.', action="version",
+                    version='pymap-copy {} by {} ({})'.format(__version__, __author__, __url__))
 
 #: run mode arguments
 parser.add_argument('-d', '--dry-run', help='copy & creating nothing, just feign', action="store_true")

@@ -25,14 +25,27 @@ SSL/TLS and STARTTLS support i wrote my own python-based version. I hope you lik
 - Python >= 3.5 (with pip)
 
 ## Installation
+### pip (recommended)
+1. Install pymap-copy: `python3 -m pip install pymap-copy`
+2. Start the program:`pymap-copy.py --help`
+> **Upgrade**: `python3 -m pip install --upgrade pymap-copy`
+
+### whl / release
+1. Download the latest [release](https://github.com/Schluggi/pymap-copy/releases/latest)
+2. Install the wheel-file: `python3 -m pip install pymap_copy-X.X-py3-none-any.whl`
+3. Start the program:`pymap-copy.py --help`
+> **Upgrade**: Simply install a newer release
+ 
+### git
 1. Clone this repo
 2. Install the requirements by running `pip3 install -r requirements.txt` 
 3. Start the program:`./pymap-copy.py --help` 
+> **Upgrade**: `git pull`
 
 ## Simple usage
 By running the following command the whole structure (folders & mails) from user1 will be copy to the mailbox of user2. 
 ```
-./pymap-copy.py \
+pymap-copy.py \
 --source-user=user1 \
 --source-server=server1.example.org \
 --source-pass=2345678 \
@@ -149,4 +162,4 @@ Possible encryption are `tls`, `ssl` (the same as `tls`), `none` and `starttls`.
 
   
 ## Credits 
-Created and maintained by Schluggi.
+Created and maintained by Lukas Schulte-Tickmann / Schluggi.

@@ -1,4 +1,8 @@
 *.idea
 *~
 *.pyc
+.pypirc
 __pycache__
+build/
+dist/
+/pymap_copy.egg-info/
