@@ -10,7 +10,7 @@ setuptools.setup(
     scripts=['pymap-copy.py'],
     author='Lukas Schulte-Tickmann',
     author_email='github@das-it-gesicht.de',
-    description='Copy and transfer IMAP mailboxes ',
+    description='Copy and transfer IMAP mailboxes',
     long_description=long_desc,
     long_description_content_type='text/markdown',
     url='https://github.com/Schluggi/pymap-copy',
