@@ -1,7 +1,6 @@
 *.idea
 *~
 *.pyc
-.pypirc
 __pycache__
 build/
 dist/
