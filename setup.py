@@ -5,7 +5,7 @@ with open('README.md') as readme:
 
 setuptools.setup(
     name='pymap-copy',
-    version='1.0',
+    version='1.0.1',
     python_requires='>=3.5',
     scripts=['pymap-copy.py'],
     author='Lukas Schulte-Tickmann',

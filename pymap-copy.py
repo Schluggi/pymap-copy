@@ -2,7 +2,7 @@
 """
     Copy and transfer IMAP mailboxes
 """
-__version__ = '1.0'
+__version__ = '1.0.1'
 __author__ = 'Lukas Schulte-Tickmann'
 __url__ = 'https://github.com/Schluggi/pymap-copy'
 
