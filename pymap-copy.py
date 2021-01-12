@@ -106,7 +106,7 @@ parser.add_argument('-b', '--buffer-size', help='the number of mails loaded with
 parser.add_argument('--denied-flags', help='mails with this flags will be skipped', type=str)
 parser.add_argument('-r', '--redirect', help='redirect a folder (source:destination --denied-flags seen,recent -d)',
                     action='append')
-parser.add_argument('--idle-interval', help='time in defines the interval (in seconds) in which the idle process is '
+parser.add_argument('--idle-interval', help='defines the interval (in seconds) after that the idle process is '
                                             'restarted (default: 1680)', type=int, default=1680)
 parser.add_argument('--ignore-quota', help='ignores insufficient quota', action='store_true')
 parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like Drafts, '
