@@ -1,3 +1,6 @@
+## 1.1.0 (upcoming)
+- support for python 3.5 dropped
+
 ## 1.0.1
 Introducing new version-system (major.minor.bugfix)
 

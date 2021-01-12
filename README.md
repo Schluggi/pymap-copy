@@ -25,7 +25,7 @@ SSL/TLS and STARTTLS support i wrote my own python-based version. I hope you lik
 - Simple usage
     
 ## Requirements
-- Python >= 3.5
+- Python >= 3.6
 
 ## Installation
 ### pip (recommended)
