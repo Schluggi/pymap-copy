@@ -41,7 +41,7 @@ SSL/TLS and STARTTLS support i wrote my own python-based version. I hope you lik
  
 ### git
 1. Clone this repo
-2. Install the requirements by running `pip3 install -r requirements.txt` 
+2. Install the requirements by running `python3 -m pip install -r requirements.txt` 
 3. Start the program:`./pymap-copy.py --help` 
 > **Upgrade**: `git pull`
 
