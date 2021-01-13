@@ -88,6 +88,17 @@ def login(client, user, password):
         return False, f'{colorize("Error:", color="red", bold=True)} No active connection'
 
 
+def get_quota(client):
+    if client.has_capability('QUOTA') and args.ignore_quota is False:
+        quota = client.get_quota()[0]
+        quota_usage = beautysized(quota.usage * 1000)
+        quota_limit = beautysized(quota.limit * 1000)
+        quota_filled = f'{quota.usage / quota.limit * 100:.0f}'
+        return quota, quota_usage, quota_limit, quota_filled
+    logging.info(f'Server does not support quota')
+    return None, None, None, None
+
+
 parser = ArgumentParser(description='Copy and transfer IMAP mailboxes',
                         epilog=f'pymap-copy by {__author__} ({__url__})')
 parser.add_argument('-v', '--version', help='show version and exit.', action="version",
@@ -238,20 +249,19 @@ print()
 
 #: get quota from source
 print('Getting source quota        : ', end='', flush=True)
-if source.has_capability('QUOTA') and args.ignore_quota is False:
-    source_quota = source.get_quota()[0]
-    print(f'{beautysized(source_quota.usage*1000)}/{beautysized(source_quota.limit*1000)} '
-          f'({source_quota.usage / source_quota.limit * 100:.0f}%)')
+logging.info(f'Getting source quota...')
+source_quota, source_quota_usage, source_quota_limit, source_quota_filled = get_quota(source)
+if source_quota:
+    print(f'{source_quota_usage}/{source_quota_limit} ({source_quota_filled}%)')
 else:
-    source_quota = None
     print('server does not support quota')
 
 #: get quota from destination
 print('Getting destination quota   : ', end='', flush=True)
-if destination.has_capability('QUOTA') and args.ignore_quota is False:
-    destination_quota = destination.get_quota()[0]
-    print(f'{beautysized(destination_quota.usage*1000)}/{beautysized(destination_quota.limit*1000)} '
-          f'({destination_quota.usage / destination_quota.limit * 100:.0f}%)')
+logging.info(f'Getting destination quota...')
+destination_quota, destination_quota_usage, destination_quota_limit, destination_quota_filled = get_quota(destination)
+if destination_quota:
+    print(f'{source_quota_usage}/{source_quota_limit} ({source_quota_filled}%)')
 else:
     destination_quota = None
     print('server does not support quota')
