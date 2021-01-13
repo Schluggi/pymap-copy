@@ -16,6 +16,10 @@ from utils import decode_mime, beautysized, imaperror_decode
 
 
 def check_encryption(value):
+    """
+        check for the --???-encryption argument
+        raise an exception if the given encryption is invalid
+    """
     value = value.lower()
     if value not in ['ssl', 'tls', 'starttls', 'none']:
         raise ArgumentTypeError(f'{value} is an unknown encryption. Use can use ssl, tls, starttls or none instead.')
@@ -23,12 +27,18 @@ def check_encryption(value):
 
 
 def default_port(encryption):
+    """
+        returns a port based on the encryption
+    """
     if encryption in ['starttls', 'none']:
         return 143
     return 993
 
 
 def colorize(s, color=None, bold=False, clear=False):
+    """
+        turn the string into a colored and/or bold one
+    """
     colors = {'red': '\x1b[31m',
               'green': '\x1b[32m',
               'cyan': '\x1b[36m',
@@ -46,6 +56,10 @@ def colorize(s, color=None, bold=False, clear=False):
 
 
 def connect(server, port, encryption):
+    """
+        connect to the server with the right ssl_context in case of encryption
+        returns a client handle if connected and None if not
+    """
     use_ssl = False
     ssl_context = None  # IMAPClient will use a context by default if ssl_context is None
 
@@ -78,6 +92,9 @@ def connect(server, port, encryption):
 
 
 def login(client, user, password):
+    """
+        login the client with the given username and password
+    """
     if client:
         try:
             client.login(user, password)
@@ -89,6 +106,9 @@ def login(client, user, password):
 
 
 def get_quota(client):
+    """
+        returns the quota of the mailbox
+    """
     if client.has_capability('QUOTA') and args.ignore_quota is False:
         quota = client.get_quota()[0]
         quota_usage = beautysized(quota.usage * 1000)
@@ -167,6 +187,8 @@ else:
     destination_port = default_port(args.destination_encryption)
 
 
+
+#: pre-defined variables
 SPECIAL_FOLDER_FLAGS = [b'\\Archive', b'\\Junk', b'\\Drafts', b'\\Trash', b'\\Sent']
 denied_flags = [b'\\recent']
 progress = 0
@@ -204,7 +226,6 @@ stats = {
 
 if args.denied_flags:
     denied_flags.extend([f'\\{flag}'.encode() for flag in args.denied_flags.lower().split(',')])
-
 
 print()
 
@@ -405,13 +426,16 @@ if any((args.source_folder, args.destination_root)):
     print(f'({colorize("filtered by arguments", color="yellow")})', end='')
 print('\n')
 
+
 #: list mode
 if args.list:
+    #: list all source folders
     print(colorize('Source:', bold=True))
     for name in db['source']['folders']:
         print(f'{name} ({len(db["source"]["folders"][name]["mails"])} mails, '
               f'{beautysized(db["source"]["folders"][name]["size"])})')
 
+    #: list all destination folders
     print(f'\n{colorize("Destination:", bold=True)}')
     for name in db['destination']['folders']:
         print(f'{name} ({len(db["destination"]["folders"][name]["mails"])} mails, '
@@ -434,6 +458,7 @@ if args.redirect:
         try:
             r_source, r_destination = redirection.split(':', 1)
 
+            #: parsing wildcards
             if r_source.endswith('*'):
                 wildcard_matches = [f for f in db['source']['folders'] if f.startswith(r_source[:-1])]
                 if wildcard_matches:
