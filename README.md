@@ -60,7 +60,7 @@ If you just want to look what would happen append `-d`/`--dry-run`.
 
 ### Incorrect login
 If your password has special characters (like `!`, `$`, `#`, ...) in it, you have to quote them with a backslash (`\`)
-in front. This is a common mistake (#8).
+in front. This is a common mistake ([#8](https://github.com/Schluggi/pymap-copy/issues/8)).
 
 ### Redirections and destination root
 #### Redirections
