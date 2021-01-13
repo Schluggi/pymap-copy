@@ -159,7 +159,7 @@ else:
 SPECIAL_FOLDER_FLAGS = [b'\\Archive', b'\\Junk', b'\\Drafts', b'\\Trash', b'\\Sent']
 denied_flags = [b'\\recent']
 progress = 0
-destination_delimiter, source_delimiter = None, None
+destination_separator, source_separator = None, None
 db = {
     'source': {
         'folders': {}
@@ -281,9 +281,10 @@ wildcards = tuple([f[:-1] for f in args.source_folder if f.endswith('*')])
 
 #: get source folders
 print(colorize('Getting source folders      : loading (this can take a while)', clear=True), flush=True, end='')
-for flags, delimiter, name in source.list_folders():
-    if not source_delimiter:
-        source_delimiter = delimiter.decode()
+logging.info('Getting source folders (this can take a while)')
+for flags, separator, name in source.list_folders():
+    if not source_separator:
+        source_separator = separator.decode()
 
     if args.source_folder:
         if name not in args.source_folder and name.startswith(wildcards) is False:
@@ -350,10 +351,11 @@ source_idle.start_idle()
 
 #: get destination folders
 print(colorize('Getting destination folders : loading (this can take a while)', clear=True), flush=True, end='')
-for flags, delimiter, name in destination.list_folders(args.destination_root):
+logging.info('Getting destination folders (this can take a while)')
+for flags, separator, name in destination.list_folders(args.destination_root):
 
-    if not destination_delimiter:
-        destination_delimiter = delimiter.decode()
+    if not destination_separator:
+        destination_separator = separator.decode()
 
     #: no need to process the source destination mailbox if we skipped the source for it
     if args.source_folder:
@@ -448,13 +450,13 @@ if not_found:
 try:
     for sf_name in sorted(db['source']['folders'], key=lambda x: x.lower()):
         source.select_folder(sf_name, readonly=True)
-        df_name = sf_name.replace(source_delimiter, destination_delimiter)
+        df_name = sf_name.replace(source_separator, destination_separator)
 
         if args.destination_root:
             if args.destination_root_merge is False or \
-                    (df_name.startswith(f'{args.destination_root}{destination_delimiter}') is False
+                    (df_name.startswith(f'{args.destination_root}{destination_separator}') is False
                      and df_name != args.destination_root):
-                df_name = f'{args.destination_root}{destination_delimiter}{df_name}'
+                df_name = f'{args.destination_root}{destination_separator}{df_name}'
 
         #: link special IMAP folder
         if not args.ignore_folder_flags:
