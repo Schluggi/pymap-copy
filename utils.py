@@ -15,9 +15,9 @@ def imaperror_decode(e):
 
 
 def beautysized(b, factor=1000, precision=1):
-    units = ['B', 'KB', 'MB', 'GB']
+    units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
     if factor == 1024:
-        units = ['B', 'KiB', 'MiB', 'GiB']
+        units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
     template = '{:.?f} {}'.replace('?', str(precision))
     rv = 0
 
