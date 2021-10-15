@@ -8,7 +8,7 @@ class IMAPIdle(Thread):
         self.interval = interval
         self._idle = False
         self._exit = False
-        super(IMAPIdle, self).__init__()
+        super(IMAPIdle, self).__init__(daemon=True)
 
     def run(self):
         while self._exit is False:

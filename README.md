@@ -60,7 +60,7 @@ If you just want to look what would happen append `-d`/`--dry-run`.
 
 ### Incorrect login
 If your password has special characters (like `!`, `$`, `#`, ...) in it, you have to quote them with a backslash (`\`)
-in front. This is a common mistake (#8).
+in front. This is a common mistake ([#8](https://github.com/Schluggi/pymap-copy/issues/8)).
 
 ### Redirections and destination root
 #### Redirections
@@ -68,7 +68,7 @@ You want to merge `INBOX.Send Items` with the `INBOX.Send` folder? You can do th
 The syntax of this argument is simple `source:destination`. For this example you can use 
 `-r "INBOX.Send Items:INBOX.Send"` to put all mails from the source folder `INBOX.Send Items` the to destination folder 
 `INBOX.Send`. Please make sure you use quotation marks if one of the folders includes a special character or space like 
-as in this example. In addition, the folder names must be case-sensitive with the correct delimiter. Do a dry run 
+as in this example. In addition, the folder names must be case-sensitive with the correct seperator. Do a dry run 
 (`-d`/`--dry-run`) to check that everything will redirect correctly. 
 
 #### Destination root

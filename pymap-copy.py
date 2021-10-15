@@ -16,6 +16,10 @@ from utils import decode_mime, beautysized, imaperror_decode
 
 
 def check_encryption(value):
+    """
+        check for the --???-encryption argument
+        raise an exception if the given encryption is invalid
+    """
     value = value.lower()
     if value not in ['ssl', 'tls', 'starttls', 'none']:
         raise ArgumentTypeError(f'{value} is an unknown encryption. Use can use ssl, tls, starttls or none instead.')
@@ -23,12 +27,18 @@ def check_encryption(value):
 
 
 def default_port(encryption):
+    """
+        returns a port based on the encryption
+    """
     if encryption in ['starttls', 'none']:
         return 143
     return 993
 
 
 def colorize(s, color=None, bold=False, clear=False):
+    """
+        turn the string into a colored and/or bold one
+    """
     colors = {'red': '\x1b[31m',
               'green': '\x1b[32m',
               'cyan': '\x1b[36m',
@@ -46,6 +56,10 @@ def colorize(s, color=None, bold=False, clear=False):
 
 
 def connect(server, port, encryption):
+    """
+        connect to the server with the right ssl_context in case of encryption
+        returns a client handle if connected and None if not
+    """
     use_ssl = False
     ssl_context = None  # IMAPClient will use a context by default if ssl_context is None
 
@@ -78,6 +92,9 @@ def connect(server, port, encryption):
 
 
 def login(client, user, password):
+    """
+        login the client with the given username and password
+    """
     if client:
         try:
             client.login(user, password)
@@ -86,6 +103,20 @@ def login(client, user, password):
             return False, f'{colorize("Error:", color="red", bold=True)} {imaperror_decode(e)}'
     else:
         return False, f'{colorize("Error:", color="red", bold=True)} No active connection'
+
+
+def get_quota(client):
+    """
+        returns the quota of the mailbox
+    """
+    if client.has_capability('QUOTA') and args.ignore_quota is False:
+        quota = client.get_quota()[0]
+        quota_usage = beautysized(quota.usage * 1000)
+        quota_limit = beautysized(quota.limit * 1000)
+        quota_filled = f'{quota.usage / quota.limit * 100:.0f}'
+        return quota, quota_usage, quota_limit, quota_filled
+    logging.info(f'Server does not support quota')
+    return None, None, None, None
 
 
 parser = ArgumentParser(description='Copy and transfer IMAP mailboxes',
@@ -106,7 +137,7 @@ parser.add_argument('-b', '--buffer-size', help='the number of mails loaded with
 parser.add_argument('--denied-flags', help='mails with this flags will be skipped', type=str)
 parser.add_argument('-r', '--redirect', help='redirect a folder (source:destination --denied-flags seen,recent -d)',
                     action='append')
-parser.add_argument('--idle-interval', help='time in defines the interval (in seconds) in which the idle process is '
+parser.add_argument('--idle-interval', help='defines the interval (in seconds) after that the idle process is '
                                             'restarted (default: 1680)', type=int, default=1680)
 parser.add_argument('--ignore-quota', help='ignores insufficient quota', action='store_true')
 parser.add_argument('--ignore-folder-flags', help='do not link default IMAP folders automatically (like Drafts, '
@@ -156,10 +187,12 @@ else:
     destination_port = default_port(args.destination_encryption)
 
 
+
+#: pre-defined variables
 SPECIAL_FOLDER_FLAGS = [b'\\Archive', b'\\Junk', b'\\Drafts', b'\\Trash', b'\\Sent']
 denied_flags = [b'\\recent']
 progress = 0
-destination_delimiter, source_delimiter = None, None
+destination_separator, source_separator = None, None
 db = {
     'source': {
         'folders': {}
@@ -193,7 +226,6 @@ stats = {
 
 if args.denied_flags:
     denied_flags.extend([f'\\{flag}'.encode() for flag in args.denied_flags.lower().split(',')])
-
 
 print()
 
@@ -238,20 +270,19 @@ print()
 
 #: get quota from source
 print('Getting source quota        : ', end='', flush=True)
-if source.has_capability('QUOTA') and args.ignore_quota is False:
-    source_quota = source.get_quota()[0]
-    print(f'{beautysized(source_quota.usage*1000)}/{beautysized(source_quota.limit*1000)} '
-          f'({source_quota.usage / source_quota.limit * 100:.0f}%)')
+logging.info(f'Getting source quota...')
+source_quota, source_quota_usage, source_quota_limit, source_quota_filled = get_quota(source)
+if source_quota:
+    print(f'{source_quota_usage}/{source_quota_limit} ({source_quota_filled}%)')
 else:
-    source_quota = None
     print('server does not support quota')
 
 #: get quota from destination
 print('Getting destination quota   : ', end='', flush=True)
-if destination.has_capability('QUOTA') and args.ignore_quota is False:
-    destination_quota = destination.get_quota()[0]
-    print(f'{beautysized(destination_quota.usage*1000)}/{beautysized(destination_quota.limit*1000)} '
-          f'({destination_quota.usage / destination_quota.limit * 100:.0f}%)')
+logging.info(f'Getting destination quota...')
+destination_quota, destination_quota_usage, destination_quota_limit, destination_quota_filled = get_quota(destination)
+if destination_quota:
+    print(f'{source_quota_usage}/{source_quota_limit} ({source_quota_filled}%)')
 else:
     destination_quota = None
     print('server does not support quota')
@@ -281,9 +312,10 @@ wildcards = tuple([f[:-1] for f in args.source_folder if f.endswith('*')])
 
 #: get source folders
 print(colorize('Getting source folders      : loading (this can take a while)', clear=True), flush=True, end='')
-for flags, delimiter, name in source.list_folders():
-    if not source_delimiter:
-        source_delimiter = delimiter.decode()
+logging.info('Getting source folders (this can take a while)')
+for flags, separator, name in source.list_folders():
+    if not source_separator:
+        source_separator = separator.decode()
 
     if args.source_folder:
         if name not in args.source_folder and name.startswith(wildcards) is False:
@@ -350,10 +382,11 @@ source_idle.start_idle()
 
 #: get destination folders
 print(colorize('Getting destination folders : loading (this can take a while)', clear=True), flush=True, end='')
-for flags, delimiter, name in destination.list_folders(args.destination_root):
+logging.info('Getting destination folders (this can take a while)')
+for flags, separator, name in destination.list_folders(args.destination_root):
 
-    if not destination_delimiter:
-        destination_delimiter = delimiter.decode()
+    if not destination_separator:
+        destination_separator = separator.decode()
 
     #: no need to process the source destination mailbox if we skipped the source for it
     if args.source_folder:
@@ -393,13 +426,16 @@ if any((args.source_folder, args.destination_root)):
     print(f'({colorize("filtered by arguments", color="yellow")})', end='')
 print('\n')
 
+
 #: list mode
 if args.list:
+    #: list all source folders
     print(colorize('Source:', bold=True))
     for name in db['source']['folders']:
         print(f'{name} ({len(db["source"]["folders"][name]["mails"])} mails, '
               f'{beautysized(db["source"]["folders"][name]["size"])})')
 
+    #: list all destination folders
     print(f'\n{colorize("Destination:", bold=True)}')
     for name in db['destination']['folders']:
         print(f'{name} ({len(db["destination"]["folders"][name]["mails"])} mails, '
@@ -422,6 +458,7 @@ if args.redirect:
         try:
             r_source, r_destination = redirection.split(':', 1)
 
+            #: parsing wildcards
             if r_source.endswith('*'):
                 wildcard_matches = [f for f in db['source']['folders'] if f.startswith(r_source[:-1])]
                 if wildcard_matches:
@@ -448,13 +485,13 @@ if not_found:
 try:
     for sf_name in sorted(db['source']['folders'], key=lambda x: x.lower()):
         source.select_folder(sf_name, readonly=True)
-        df_name = sf_name.replace(source_delimiter, destination_delimiter)
+        df_name = sf_name.replace(source_separator, destination_separator)
 
         if args.destination_root:
             if args.destination_root_merge is False or \
-                    (df_name.startswith(f'{args.destination_root}{destination_delimiter}') is False
+                    (df_name.startswith(f'{args.destination_root}{destination_separator}') is False
                      and df_name != args.destination_root):
-                df_name = f'{args.destination_root}{destination_delimiter}{df_name}'
+                df_name = f'{args.destination_root}{destination_separator}{df_name}'
 
         #: link special IMAP folder
         if not args.ignore_folder_flags:
