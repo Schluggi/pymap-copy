@@ -1,8 +1,9 @@
 # pymap-copy
-[![donate](https://img.shields.io/badge/donate-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KPG2MY37LCC24&source=url)
 [![PyPI version](https://badge.fury.io/py/pymap-copy.svg)](https://badge.fury.io/py/pymap-copy)
 [![release](https://img.shields.io/github/v/release/schluggi/pymap-copy.svg)](https://github.com/Schluggi/pymap-copy/releases/latest)
 [![license](https://img.shields.io/badge/license-MIT-yellow.svg)](https://github.com/Schluggi/pymap-copy/blob/master/LICENSE.txt)
+
+<a href="https://www.buymeacoffee.com/schluggi" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/white_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 
 In our company we often have to copy mailboxes from one to another server. For this we used 
 [IMAPCopy](http://www.ardiehl.de/imapcopy/) as so far. Due to compatibility issues, first of all the missing 
