@@ -6,6 +6,7 @@ __version__ = '1.0.1'
 __author__ = 'Lukas Schulte-Tickmann'
 __url__ = 'https://github.com/Schluggi/pymap-copy'
 
+import logging
 from argparse import ArgumentParser, ArgumentTypeError
 from time import time
 
