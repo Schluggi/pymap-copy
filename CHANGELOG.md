@@ -1,3 +1,7 @@
+## 1.0.3
+- fixed: success message for some apps
+- fixed: shebang
+
 ## 1.0.2 
 - support for python 3.5 dropped
 - fixed: error at large quota ([#11](https://github.com/Schluggi/pymap-copy/issues/11))

@@ -625,7 +625,7 @@ try:
                                                                    denied_flags), msg_time=date)
 
                         #: differed IMAP servers have differed return codes
-                        success_messages = [b'append completed', b'(success)']
+                        success_messages = [b'append', b'(success)']
                         if any([msg in status.lower() for msg in success_messages]):
                             stats['copied_mails'] += 1
                         else:
